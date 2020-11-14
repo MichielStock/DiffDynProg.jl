@@ -1,17 +1,22 @@
 
 using LinearAlgebra: ⋅, norm
+using StatsBase: mean
 
-abstract type GenMax end
+abstract type MaxOperator end
 
-struct Max <: GenMax end
+struct Max <: MaxOperator end
 
-struct EntropyMax <: GenMax
+struct LeakyMax <: MaxOperator
+    p::Float64
+end
+
+struct EntropyMax <: MaxOperator
     γ::Float64
 end
 
 EntropyMax() = EntropyMax(1.0)
 
-struct SquaredMax <: GenMax
+struct SquaredMax <: MaxOperator
     γ::Float64
 end
 
@@ -31,25 +36,58 @@ function project_in_simplex(v::Vector, z::Number)
     return max.(v .- θ, 0.0)
 end
 
-function max_argmax(::Max, x)
+# Maximization functions
+
+function max_argmax!(::Max, x::VecOrMat{T}) where {T}
     i = argmax(x)
-    am = zero(x)
-    am[i] = one(eltype(x))
-    return x[i],  am
+    m = x[i]
+    x .= zero(T)
+    x[i] = one(T)
+    return m, x
 end
 
-function max_argmax(m::EntropyMax, x)
-    γ = m.γ
+function max_argmax!(mo::LeakyMax, x::VecOrMat{T}) where {T}
+    p = mo.p
     n = length(x)
-    # substract mean, scale and exponent
-    ex = (x .- sum(x) / n) ./ γ .|> exp
-    se = sum(ex)
-    return γ .* log(se),  ex ./ se
+    i = argmax(x)
+    ρ = (1.0 - (n - 1) * p)
+    m = p * sum(x) - (1.0 - (n - 1) * p) * x[i]
+    x .= p
+    x[i] = 1.0 - (n - 1) * p
+    return m, x
 end
 
-function max_argmax(m::SquaredMax, x)
-    γ = m.γ
+function max_argmax!(mo::EntropyMax, x::VecOrMat{T}) where {T}
+    γ = mo.γ
+    xm = mean(x)
+    # substract mean, scale and exponent
+    @. x = exp((x - xm) / γ)
+    se = sum(x)
+    x ./= se
+    return γ * log(se),  x
+end
+
+function max_argmax!(mo::SquaredMax, x::Vector)
+    γ = mo.γ
+    q = project_in_simplex(x ./ γ , 1.0)
+    sqm = x ⋅ q - 0.5γ * norm(q)^2.0
+    x .= q
+    return sqm,  q
+end
+
+function max_argmax(mo::SquaredMax, x::Vector)
+    γ = mo.γ
     q = project_in_simplex(x ./ γ , 1.0)
     sqm = x ⋅ q - 0.5γ * norm(q)^2.0
     return sqm,  q
 end
+
+max_argmax(mo::MaxOperator, x) = max_argmax!(mo, copy(x))
+
+function min_argmin!(mo::MaxOperator, x)
+    x .= -x
+    m, am = max_argmax!(mo, x)
+    return -m, am
+end
+
+min_argmin(mo::MaxOperator, x) = min_argmin!(mo, copy(x))
