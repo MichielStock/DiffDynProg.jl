@@ -24,7 +24,7 @@ end
 DPW(θ) = DPW!(zeros(eltype(θ), size(θ,1)+1, size(θ,2)+1), θ)
 
 
-function ∂DPW!(D, θ, E, Q)
+function ∂DPW!(mo::MaxOperator, D, θ, E, Q)
     n, m = size(θ)
     fill!(Q, zero(eltype(Q)))
 	Q[end, end, 2] = 1
@@ -33,28 +33,27 @@ function ∂DPW!(D, θ, E, Q)
 	E[end,end] = 1
 	D[:,1] .= Inf
 	D[1,:] .= Inf
-    D[1,1] = 0.0
+	D[1,1] = 0.0
     y = zeros(eltype(D), 3)
 	for i in 1:n, j in 1:m
 		y .= D[i+1,j], D[i,j], D[i,j+1]
-        D[i+1,j+1] = minimum(y) + θ[i,j]
-        Q[i+1,j+1,:] .= 0.01
-		Q[i+1,j+1,argmin(y)] = 0.98
+		# caution, this overwrites y for performance purposes
+		ymin, yargmin = min_argmin!(mo, y)
+        D[i+1,j+1] = ymin + θ[i,j]
+        Q[i+1,j+1,:] .= yargmin
 	end
 	for j in m:-1:1, i in n:-1:1
-        E[i+1,j+1] = Q[i+1,j+2,1] * E[i+1,j+2] + Q[i+2,j+2,2] * E[i+2,j+2] + Q[i+2,j+1,3] * E[i+2,j+1]
+        @inbounds E[i+1,j+1] = Q[i+1,j+2,1] * E[i+1,j+2] + Q[i+2,j+2,2] * E[i+2,j+2] + Q[i+2,j+1,3] * E[i+2,j+1]
 	end
-	return D, E
+	return D, @view E[2:end, 2:end]
 end
 
-
-
-function ∂DPW(θ::Matrix{T} where {T})
+function ∂DPW(mo::MaxOperator, θ::Matrix{T} where {T})
     n, m = size(θ)
     Q = zeros(n+2, m+2, 3)
     E = zeros(n+2, m+2)
     D = zeros(n+1, m+1)
-    return ∂DPW!(D, θ, E, Q)
+    return ∂DPW!(mo, D, θ, E, Q)
 end
 
 s = sin.(0:1:20pi)
@@ -62,9 +61,15 @@ t = cos.(1:1:10pi)
 
 θ = (s .- t').^2
 
-D, E = ∂DPW(θ)
+
+mo = SquaredMax()
+
+D, E = ∂DPW(mo, θ)
+
+using Plots
 
 plot(heatmap(θ), heatmap(D[2:end,2:end]), heatmap(E))
+
 
 
 

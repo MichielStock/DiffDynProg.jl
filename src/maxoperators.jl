@@ -47,6 +47,8 @@ function max_argmax!(::Max, x::VecOrMat{T}) where {T}
 end
 
 function max_argmax!(mo::LeakyMax, x::VecOrMat{T}) where {T}
+    # if there are infinities, just use regular max
+    !all(isfinite.(x)) && return max_argmax!(Max(), x)
     p = mo.p
     n = length(x)
     i = argmax(x)
@@ -58,6 +60,8 @@ function max_argmax!(mo::LeakyMax, x::VecOrMat{T}) where {T}
 end
 
 function max_argmax!(mo::EntropyMax, x::VecOrMat{T}) where {T}
+    # if there are infinities, just use regular max
+    !all(isfinite.(x)) && return max_argmax!(Max(), x)
     γ = mo.γ
     xm = mean(x)
     # substract mean, scale and exponent
@@ -68,6 +72,8 @@ function max_argmax!(mo::EntropyMax, x::VecOrMat{T}) where {T}
 end
 
 function max_argmax!(mo::SquaredMax, x::Vector)
+    # if there are infinities, just use regular max
+    !all(isfinite.(x)) && return max_argmax!(Max(), x)
     γ = mo.γ
     q = project_in_simplex(x ./ γ , 1.0)
     sqm = x ⋅ q - 0.5γ * norm(q)^2.0
