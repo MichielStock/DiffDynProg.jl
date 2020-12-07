@@ -25,7 +25,7 @@ struct Max <: MaxOperator end
 # leaks a fraction p
 struct LeakyMax{T<:AbstractFloat} <: MaxOperator
     p::Float64
-    function LeakyMax(p::T) where {T<:AbstractFloat}
+    function LeakyMax(p::T=0.1) where {T<:AbstractFloat}
         @assert 0.0 < p < 1.0 "`p` has to be in ]0, 1["
         return new{T}(p)
     end
@@ -50,12 +50,16 @@ end
 # Maximization functions
 # ----------------------
 
+# dot product that only consider finite numbers
+fin_dot(q, x) = sum(qᵢ * xᵢ for (qᵢ, xᵢ) in zip(q, x) if qᵢ > 0 && xᵢ > -Inf)
+fin_mean(x) = mean((xᵢ for xᵢ in x if xᵢ > -Inf))
+
 #maximum(mo::MaxOperator, x::Vector{<:Number}) = max(mo, x...)
 maximum(mo::Max, x::Vector{<:Number}) = maximum(x)
 
 function maximum(mo::LeakyMax{T}, x::Vector{<:Number}) where {T}
     p = mo.p
-    return (one(T) - p) * maximum(x) + p * mean(x)
+    return (one(T) - p) * maximum(x) + p * fin_mean(x)
 end
 
 function maximum(mo::EntropyMax, x::Vector{<:Number})
@@ -66,13 +70,15 @@ end
 function maximum(mo::SquaredMax, x::Vector{<:Number})
     γ = mo.γ
     q = project_in_simplex(x ./ γ , one(γ))
-    return x ⋅ q - (γ/2) * norm(q)^2
+    return fin_dot(q, x) - (γ/2) * norm(q)^2
 end
 
 # Chain Rules
 # -----------
 
-function frule(::typeof(max), ::Max, x::Vector{T}) where {T<:Number}
+# FIXME: these should behave better when x is finite
+
+function frule(::typeof(maximum), ::Max, x::Vector{T}) where {T<:Number}
     i = argmax(x)
     m = x[i]
     x .= zero(T)
@@ -80,7 +86,35 @@ function frule(::typeof(max), ::Max, x::Vector{T}) where {T<:Number}
     return m, x
 end
 
+function frule(::typeof(maximum), mo::LeakyMax, x::Vector{<:Number})
+    p = mo.p
+    i = argmax(x)
+    pcompl = (one(p) - p)
+    m = pcompl * x[i] + p * mean(x)
+    n = length(x)
+    q = ones(typeof(p), n)
+    q .*= p / n
+    q[i] += pcompl
+    return m, q
+end
 
+function frule(::typeof(maximum), mo::EntropyMax, x::Vector{<:Number})
+    γ = mo.γ
+    m = maximum(mo, x)
+    q = exp.((x .-fin_mean(x)) ./ γ)
+    q ./= sum(q)
+    return m, q
+end
+
+function frule(::typeof(maximum), mo::SquaredMax, x::Vector{<:Number})
+    γ = mo.γ
+    q = project_in_simplex(x ./ γ , one(γ))
+    qnorm = norm(q)
+    m = qnorm == 1 ? maximum(x) - (γ/2) : x ⋅ q - (γ/2) * qnorm^2
+    return m, q
+end
+
+#=
 min(mo::Max, x::Number...) = min(x...)
 
 function min(mo::LeakyMax, x::Number...)
@@ -151,3 +185,4 @@ function min_argmin!(mo::MaxOperator, x)
 end
 
 min_argmin(mo::MaxOperator, x) = min_argmin!(mo, copy(x))
+=#

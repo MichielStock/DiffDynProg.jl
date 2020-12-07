@@ -9,6 +9,8 @@ General utilities used by the function of this package but
 are themselves not the main product.
 =#
 
+# TODO: make this more efficient
+
 """
     project_in_simplex(v::Vector, z::Number)
 
