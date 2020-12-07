@@ -50,10 +50,6 @@ end
 # Maximization functions
 # ----------------------
 
-# dot product that only consider finite numbers
-fin_dot(q, x) = sum(qᵢ * xᵢ for (qᵢ, xᵢ) in zip(q, x) if qᵢ > 0 && xᵢ > -Inf)
-fin_mean(x) = mean((xᵢ for xᵢ in x if xᵢ > -Inf))
-
 #maximum(mo::MaxOperator, x::Vector{<:Number}) = max(mo, x...)
 maximum(mo::Max, x::Vector{<:Number}) = maximum(x)
 
@@ -76,24 +72,22 @@ end
 # Chain Rules
 # -----------
 
-# FIXME: these should behave better when x is finite
-
 function frule(::typeof(maximum), ::Max, x::Vector{T}) where {T<:Number}
     i = argmax(x)
     m = x[i]
-    x .= zero(T)
-    x[i] = one(T)
-    return m, x
+    q = zeros(T, length(x))
+    q[i] = one(T)
+    return m, q
 end
 
 function frule(::typeof(maximum), mo::LeakyMax, x::Vector{<:Number})
     p = mo.p
     i = argmax(x)
     pcompl = (one(p) - p)
-    m = pcompl * x[i] + p * mean(x)
-    n = length(x)
-    q = ones(typeof(p), n)
-    q .*= p / n
+    m = pcompl * x[i] + p * fin_mean(x)
+    n = count(el-> el > -Inf, x)
+    q = Vector{typeof(p)}(undef, length(x))
+    @. q = p / n * (x > -Inf)
     q[i] += pcompl
     return m, q
 end
@@ -109,10 +103,31 @@ end
 function frule(::typeof(maximum), mo::SquaredMax, x::Vector{<:Number})
     γ = mo.γ
     q = project_in_simplex(x ./ γ , one(γ))
-    qnorm = norm(q)
-    m = qnorm == 1 ? maximum(x) - (γ/2) : x ⋅ q - (γ/2) * qnorm^2
+    m = fin_dot(q, x) - (γ/2) * norm(q)^2
     return m, q
 end
+
+"""
+    max_argmax(mo::MaxOperator, x::Vector{<:Number})
+
+Returns the maximum and the argmaxim (i.e., the gradient of the max) of 
+a vector `x` using a given `MaxOperator`. 
+"""
+max_argmax(mo::MaxOperator, x::Vector{<:Number}) = frule(maximum, mo, x)
+
+
+# Minimum
+# -------
+
+minimum(mo::Max, x::Vector{<:Number}) = minimum(x)
+minimum(mo::MaxOperator, x::Vector{<:Number}) = -maximum(mo, -x)
+
+function frule(::typeof(minimum), mo::MaxOperator, x::Vector{<:Number})
+    m, q = frule(maximum, mo, -x)
+    return -m, q
+end
+
+min_argmin(mo::MaxOperator, x::Vector{<:Number}) = frule(minimum, mo, x)
 
 #=
 min(mo::Max, x::Number...) = min(x...)

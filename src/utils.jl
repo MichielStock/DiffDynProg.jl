@@ -24,3 +24,8 @@ function project_in_simplex(v::Vector{T}, z::Number) where {T<:Number}
     θ = (μcs[ρ] - z) / ρ
     return max.(v .- θ, zero(T))
 end
+
+# dot product that only consider finite numbers
+fin_dot(q, x) = sum(qᵢ * xᵢ for (qᵢ, xᵢ) in zip(q, x) if qᵢ > 0 && xᵢ > -Inf)
+# finite mean that only considers finite numbers
+fin_mean(x) = mean((xᵢ for xᵢ in x if xᵢ > -Inf))
