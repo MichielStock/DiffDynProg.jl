@@ -11,7 +11,8 @@ Implementation of the smooth max operators and their gradients.
 using LinearAlgebra: ⋅, norm
 using StatsBase: mean
 using ChainRulesCore
-import ChainRulesCore: frule, rrule, NO_FIELDS
+import ChainRulesCore: frule, rrule
+using ChainRulesCore: NO_FIELDS
 import Base: min, max, minimum, maximum
 
 # Type hierarchy
@@ -110,7 +111,7 @@ end
 
 function rrule(::typeof(maximum), mo::MaxOperator, x::Vector{T}) where {T<:Number}
     m, q = max_argmax(mo, x)
-    return m, ȳ -> (NO_FIELDS, ȳ * q)
+    return m, ȳ -> (NO_FIELDS, Zero(), ȳ * q)
 end
 
 
@@ -136,7 +137,7 @@ end
 
 function rrule(::typeof(minimum), mo::MaxOperator, x::Vector{T}) where {T<:Number}
     m, q = min_argmin(mo, x)
-    return m, ȳ -> (NO_FIELDS, ȳ * q)
+    return m, ȳ -> (NO_FIELDS, Zero(), ȳ * q)
 end
 
 min_argmin(mo::MaxOperator, x::Vector{<:Number}) = frule(minimum, mo, x)
