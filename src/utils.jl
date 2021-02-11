@@ -1,6 +1,6 @@
 #=
 Created on 07/12/2020 09:36:55
-Last update: -
+Last update: 11/02/2021
 
 @author: Michiel Stock
 michielfmstock@gmail.com
@@ -29,3 +29,7 @@ end
 fin_dot(q, x) = sum(qᵢ * xᵢ for (qᵢ, xᵢ) in zip(q, x) if qᵢ > 0 && xᵢ > -Inf)
 # finite mean that only considers finite numbers
 fin_mean(x) = mean((xᵢ for xᵢ in x if xᵢ > -Inf))
+
+
+gap_cost_matrix(n::Int, m::Int) = -(0:n-1) .- (0:m-1)'
+gap_cost_matrix(cx::Vector, cy::Vector) = -cumsum(cx) .- cumsum(cy)'
