@@ -1,6 +1,6 @@
 #=
 Created on Friday 06 November 2020
-Last update: Monday 16 November 2020
+Last update: Thursday 11 February 2021
 
 @author: Michiel Stock
 michielfmstock@gmail.com
@@ -10,35 +10,41 @@ according to Mench and Blondel.
 =#
 
 # TODO: make part of a type tree for DP
+
+using ChainRulesCore
+import ChainRulesCore: rrule
+
 struct DTW{T<:AbstractFloat}
 	D::Matrix{T}
 	E::Matrix{T}
 	Q::Array{T,3}
 end
 
-DTW(T::Type{<:AbstractFloat}, n, m) = DTW(Matrix{T}(undef, n+1, m+1),
+DTW(T::Type{<:AbstractFloat}, n::Int, m::Int) = DTW(Matrix{T}(undef, n+1, m+1),
 											Matrix{T}(undef, n+2, m+2),
 											Array{T}(undef, n+2, m+2, 3))
-DTW(n, m) = DTW(Float64, n, m)
+DTW(n::Int, m::Int) = DTW(Float64, n, m)
 DTW(θ::Matrix) = DTW(eltype(θ), size(θ)...)
 
-function DPW!(mo::MaxOperator, D, θ)
+function dynamic_time_warping(mo::MaxOperator, θ, D)
     n, m = size(θ)
     @assert size(D) == (n+1, m+1) "The dimensions of the DP matrix and θ do not agree"
 	D[:,1] .= Inf
 	D[1,:] .= Inf
 	D[1,1] = 0.0
-	for i in 1:n, j in 1:m
-	 	D[i+1,j+1] = min(D[i+1,j], D[i,j], D[i,j+1]) + θ[i,j]
+	y = zeros(eltype(D), 3)
+	@inbounds for j in 1:m, i in 1:n
+		y = zeros(eltype(D), 3)
+	 	 D[i+1,j+1] = minimum(mo, y) + θ[i,j]
 	end
     return last(D)
 end
 
-DPW(θ) = DPW!(zeros(eltype(θ), size(θ,1)+1, size(θ,2)+1), θ)
+dynamic_time_warping(mo::MaxOperator, θ, dtw::DTW) = dynamic_time_warping(mo, θ, dtw.D)
 
-function ∂DPW!(mo::MaxOperator, θ, D, E, Q)
+function ∂DPW(mo::MaxOperator, θ, D, E, Q)
     n, m = size(θ)
-    fill!(Q, zero(eltype(Q)))
+    fill!(Q, 0)
 	Q[end, end, 2] = 1
 	E[:,end] .= 0
 	E[end,:] .= 0
@@ -50,17 +56,22 @@ function ∂DPW!(mo::MaxOperator, θ, D, E, Q)
 	@inbounds for j in 1:m, i in 1:n
 		y .= D[i+1,j], D[i,j], D[i,j+1]
 		# caution, this overwrites y for performance purposes
-		ymin, yargmin = min_argmin!(mo, y)
+		ymin, yargmin = min_argmin(mo, y)
     	D[i+1,j+1] = ymin + θ[i,j]
        	Q[i+1,j+1,:] .= yargmin
 	end
 	@inbounds for j in m:-1:1, i in n:-1:1
         E[i+1,j+1] = Q[i+1,j+2,1] * E[i+1,j+2] + Q[i+2,j+2,2] * E[i+2,j+2] + Q[i+2,j+1,3] * E[i+2,j+1]
 	end
-	return @view(D[2:end,2:end]), @view(E[2:end, 2:end])
+	return @view(D[2:end,2:end]), @view(E[2:end-1, 2:end-1])
 end
 
-∂DPW!(mo::MaxOperator, θ, dtw::DTW) = ∂DPW!(mo::MaxOperator, θ, dtw.D, dtw.E, dtw.Q) 
+∂DPW(mo::MaxOperator, θ, dtw::DTW) = ∂DPW(mo::MaxOperator, θ, dtw.D, dtw.E, dtw.Q)
+
+function rrule(::typeof(dynamic_time_warping), mo::MaxOperator, θ, dtw)
+	D, E = ∂DPW(mo, θ, dtw)
+	return last(D), ȳ -> (NO_FIELDS, Zero(), ȳ * E, Zero())
+end
 
 function ∂DPW(mo::MaxOperator, θ::Matrix{T} where {T})
     n, m = size(θ)
@@ -70,24 +81,26 @@ function ∂DPW(mo::MaxOperator, θ::Matrix{T} where {T})
     return ∂DPW!(mo, θ, D, E, Q)
 end
 
-function generate_DPW(mo::MaxOperator, θ::AbstractMatrix)
-	dtw = DTW(θ)
-	return 
+n, m = 10, 5
 
-s = sin.(0:1:20pi)
-t = cos.(1:1:10pi)
+s = range(0, stop=2π, length=n) .|> sin
+t = range(2, stop=2π, length=m)  .|> cos
 
 θ = (s .- t').^2
 
-mo = EntropyMax(10.0)
+mo = EntropyMax(1.0)
 
 dtw = DTW(θ)
 
-D, E = ∂DPW!(mo::MaxOperator, θ, dtw::DTW)
+c = dynamic_time_warping(mo, θ, dtw)
+
+L(θ) = dynamic_time_warping(mo, θ, dtw)
+
+D, E = ∂DPW(mo::MaxOperator, θ, dtw::DTW)
 
 using Plots
 
-plot(heatmap(θ), heatmap(D), heatmap(E))
+plot(heatmap(θ, title="theta"), heatmap(D, title="D"), heatmap(E, title="E"))
 
 
 
