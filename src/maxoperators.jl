@@ -1,6 +1,6 @@
 #=
 Created on 07/12/2020 09:23:01
-Last update: -
+Last update: 11/02/2020
 
 @author: Michiel Stock
 michielfmstock@gmail.com
@@ -11,7 +11,7 @@ Implementation of the smooth max operators and their gradients.
 using LinearAlgebra: ⋅, norm
 using StatsBase: mean
 using ChainRulesCore
-import ChainRulesCore: frule, rrule
+import ChainRulesCore: frule, rrule, NO_FIELDS
 import Base: min, max, minimum, maximum
 
 # Type hierarchy
@@ -60,7 +60,7 @@ end
 
 function maximum(mo::EntropyMax, x::Vector{<:Number})
     γ = mo.γ
-    return x ./ γ .|> exp |> sum |> log |> m -> γ * m
+    return x ./ γ .|> exp |> sum |> log |> (m -> γ * m)
 end
 
 function maximum(mo::SquaredMax, x::Vector{<:Number})
@@ -95,17 +95,24 @@ end
 function frule(::typeof(maximum), mo::EntropyMax, x::Vector{<:Number})
     γ = mo.γ
     m = maximum(mo, x)
-    q = exp.((x .-fin_mean(x)) ./ γ)
+    q = exp.((x .- fin_mean(x)) ./ γ)
     q ./= sum(q)
     return m, q
 end
 
 function frule(::typeof(maximum), mo::SquaredMax, x::Vector{<:Number})
     γ = mo.γ
-    q = project_in_simplex(x ./ γ , one(γ))
+    q = project_in_simplex(x ./ γ, one(γ))
     m = fin_dot(q, x) - (γ/2) * norm(q)^2
     return m, q
 end
+
+
+function rrule(::typeof(maximum), mo::MaxOperator, x::Vector{T}) where {T<:Number}
+    m, q = max_argmax(mo, x)
+    return m, ȳ -> (NO_FIELDS, ȳ * q)
+end
+
 
 """
     max_argmax(mo::MaxOperator, x::Vector{<:Number})
@@ -119,12 +126,17 @@ max_argmax(mo::MaxOperator, x::Vector{<:Number}) = frule(maximum, mo, x)
 # Minimum
 # -------
 
-minimum(mo::Max, x::Vector{<:Number}) = minimum(x)
+minimum(::Max, x::Vector{<:Number}) = minimum(x)
 minimum(mo::MaxOperator, x::Vector{<:Number}) = -maximum(mo, -x)
 
 function frule(::typeof(minimum), mo::MaxOperator, x::Vector{<:Number})
     m, q = frule(maximum, mo, -x)
     return -m, q
+end
+
+function rrule(::typeof(minimum), mo::MaxOperator, x::Vector{T}) where {T<:Number}
+    m, q = min_argmin(mo, x)
+    return m, ȳ -> (NO_FIELDS, ȳ * q)
 end
 
 min_argmin(mo::MaxOperator, x::Vector{<:Number}) = frule(minimum, mo, x)
