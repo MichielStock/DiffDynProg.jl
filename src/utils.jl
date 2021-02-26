@@ -33,3 +33,4 @@ fin_mean(x) = mean((xᵢ for xᵢ in x if xᵢ > -Inf))
 
 gap_cost_matrix(n::Int, m::Int) = -(0:n-1) .- (0:m-1)'
 gap_cost_matrix(cx::Vector, cy::Vector) = -cumsum(cx) .- cumsum(cy)'
+#TODO: write custom gradient
