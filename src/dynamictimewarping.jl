@@ -17,13 +17,17 @@ import ChainRulesCore: rrule
 """
 	DTW{T<:AbstractFloat}
 
-Dynamic time warping object. 
+Dynamic time warping object. Contains all the matrices needed
+for the dynamic programming and computing the gradient.
 """
 struct DTW{T<:AbstractFloat}
 	D::Matrix{T}
 	E::Matrix{T}
 	Q::Array{T,3}
 end
+
+getE(dtw::DTW) = @view(E[2:end-1, 2:end-1])
+getD(dtw::DTW) = @view(D[2:end, 2:end])
 
 DTW(T::Type{<:AbstractFloat}, n::Int, m::Int) = DTW(Matrix{T}(undef, n+1, m+1),
 											Matrix{T}(undef, n+2, m+2),
@@ -46,6 +50,12 @@ function dynamic_time_warping(mo::MaxOperator, θ, D)
     return last(D)
 end
 
+"""
+	dynamic_time_warping(mo::MaxOperator, θ, dtw::DTW)
+
+Performs dynamic time warping using a maximum operators `mo`, a weight matrix
+`θ` and a dynamic time warping object `dtw`.
+"""
 dynamic_time_warping(mo::MaxOperator, θ, dtw::DTW) = dynamic_time_warping(mo, θ, dtw.D)
 
 function ∂DPW(mo::MaxOperator, θ, D, E, Q)
