@@ -1,6 +1,6 @@
 #=
 Created on Friday 06 November 2020
-Last update: Thursday 11 February 2021
+Last update: Friday 26 February 2021
 
 @author: Michiel Stock
 michielfmstock@gmail.com
@@ -14,6 +14,11 @@ according to Mench and Blondel.
 using ChainRulesCore
 import ChainRulesCore: rrule
 
+"""
+	DTW{T<:AbstractFloat}
+
+Dynamic time warping object. 
+"""
 struct DTW{T<:AbstractFloat}
 	D::Matrix{T}
 	E::Matrix{T}
@@ -25,6 +30,7 @@ DTW(T::Type{<:AbstractFloat}, n::Int, m::Int) = DTW(Matrix{T}(undef, n+1, m+1),
 											Array{T}(undef, n+2, m+2, 3))
 DTW(n::Int, m::Int) = DTW(Float64, n, m)
 DTW(θ::Matrix) = DTW(eltype(θ), size(θ)...)
+
 
 function dynamic_time_warping(mo::MaxOperator, θ, D)
     n, m = size(θ)
@@ -80,28 +86,5 @@ function ∂DPW(mo::MaxOperator, θ::Matrix{T} where {T})
     D = zeros(n+1, m+1)
     return ∂DPW!(mo, θ, D, E, Q)
 end
-
-n, m = 10, 5
-
-s = range(0, stop=2π, length=n) .|> sin
-t = range(2, stop=2π, length=m)  .|> cos
-
-θ = (s .- t').^2
-
-mo = EntropyMax(1.0)
-
-dtw = DTW(θ)
-
-c = dynamic_time_warping(mo, θ, dtw)
-
-L(θ) = dynamic_time_warping(mo, θ, dtw)
-
-D, E = ∂DPW(mo::MaxOperator, θ, dtw::DTW)
-
-using Plots
-
-plot(heatmap(θ, title="theta"), heatmap(D, title="D"), heatmap(E, title="E"))
-
-
 
 

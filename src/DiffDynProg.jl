@@ -2,7 +2,10 @@ module DiffDynProg
 
 export MaxOperator, Max, LeakyMax, EntropyMax, SquaredMax, max_argmax, min_argmin
 
-#include("dynamictimewarping.jl")
+export DTW, dynamic_time_warping, ∂DPW
+
+
+include("dynamictimewarping.jl")
 include("maxoperators.jl")
 include("utils.jl")
 
