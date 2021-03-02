@@ -69,6 +69,7 @@ plot(ts, hθ, hD, hmax, hem, hsm, size=(1200, 600))
 
 savefig(plotsdir("dtw_test.png"))
 
+
 # computing a loss function
 
 L(θ) = dynamic_time_warping(EntropyMax(0.1), θ, dtw) + 0.01sum(abs2, θ)
@@ -90,14 +91,13 @@ scatter!(t, label="t")
 quiver!(t, quiver=(zeros(m), ∇t))
 savefig(plotsdir("dtw_gradient.png"))
 
-
 # with a gapcost
-Lfixedgap(θ, c) = dynamic_time_warping(EntropyMax(1.0), θ + c * gap_cost_matrix(n, m), dtw)
+Lfixedgap(θ, cost) = dynamic_time_warping(EntropyMax(1.0), θ + cost * gap_cost_matrix(n, m), dtw)
 
 ∇θ, dc = gradient(Lfixedgap, θ, 0.4)
 heatmap(∇θ)
 
 # with a variabel gap cost
-Lvargap(θ, cs, ct) = dynamic_time_warping(EntropyMax(1.0), θ + gap_cost_matrix(cs, ct), dtw)
-cs, ct = 0.1ones(n), 0.1*ones(m)
+Lvargap(θ, cs, ct) = dynamic_time_warping(EntropyMax(.1), θ + gap_cost_matrix(cs, ct), dtw)
+cs, ct = 0.01ones(n), 0.01*ones(m)
 ∇θ, dcs, dct = gradient(Lvargap, θ, cs, ct)
