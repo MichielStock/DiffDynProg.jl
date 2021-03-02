@@ -10,8 +10,6 @@ are themselves not the main product.
 =#
 
 # TODO: make this more efficient
-
-
 """
     project_in_simplex(v::Vector, z::Number)
 
@@ -24,6 +22,11 @@ function project_in_simplex(v::Vector{T}, z::Number) where {T<:Number}
     ρ = maximum((i for (i, μi) in enumerate(μ) if μi - (μcs[i] - z) / i > 0.0))
     θ = (μcs[ρ] - z) / ρ
     return max.(v .- θ, zero(T))
+end
+
+function logsumexp(x; γ=1)
+    c = maximum(x)
+    return c + γ * log(sum(exp.((x .- c)/γ)))
 end
 
 # dot product that only consider finite numbers

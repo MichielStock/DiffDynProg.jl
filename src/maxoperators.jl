@@ -61,7 +61,7 @@ end
 
 function maximum(mo::EntropyMax, x::Vector{<:Number})
     γ = mo.γ
-    return x ./ γ .|> exp |> sum |> log |> (m -> γ * m)
+    return logsumexp(x; γ)
 end
 
 function maximum(mo::SquaredMax, x::Vector{<:Number})
@@ -95,9 +95,8 @@ end
 
 function frule(::typeof(maximum), mo::EntropyMax, x::Vector{<:Number})
     γ = mo.γ
-    m = maximum(mo, x)
-    q = exp.((x .- fin_mean(x)) ./ γ)
-    q ./= sum(q)
+    m = logsumexp(x; γ)
+    q = exp.((x / γ) .- m / γ)
     return m, q
 end
 
@@ -113,6 +112,14 @@ function rrule(::typeof(maximum), mo::MaxOperator, x::Vector{T}) where {T<:Numbe
     m, q = max_argmax(mo, x)
     return m, ȳ -> (NO_FIELDS, Zero(), ȳ * q)
 end
+
+function rrule(::typeof(maximum), mo::EntropyMax, x::Vector{T}) where {T<:Number}
+    γ = mo.γ
+    m = logsumexp(x; γ)
+    q = exp.((x / γ) .- m / γ)
+    return m, ȳ -> (NO_FIELDS, Zero(), ȳ * q)
+end
+
 
 
 """
