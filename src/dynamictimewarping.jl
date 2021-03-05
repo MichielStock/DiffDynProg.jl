@@ -1,6 +1,6 @@
 #=
 Created on Friday 06 November 2020
-Last update: Friday 26 February 2021
+Last update: Tuesday 2 March 2021
 
 @author: Michiel Stock
 michielfmstock@gmail.com
@@ -10,9 +10,6 @@ according to Mench and Blondel.
 =#
 
 # TODO: make part of a type tree for DP
-
-using ChainRulesCore
-import ChainRulesCore: rrule
 
 """
 	DTW{T<:AbstractFloat}

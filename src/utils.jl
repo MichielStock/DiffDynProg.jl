@@ -1,6 +1,6 @@
 #=
 Created on 07/12/2020 09:36:55
-Last update: 01/03/2021
+Last update: Friday 5 March 2021
 
 @author: Michiel Stock
 michielfmstock@gmail.com
@@ -8,6 +8,15 @@ michielfmstock@gmail.com
 General utilities used by the function of this package but
 are themselves not the main product.
 =#
+
+# Generating Gumbel random values
+
+randg() = - log(-log(rand()))
+
+"""sample a vector or array of values from Gumbel(0, 1)"""
+randg(n::Int...) = - log.(-log.(rand(n...)))
+
+exprandg(n::Int) = 1.0 ./ -log.(rand(n))
 
 # TODO: make this more efficient
 """
@@ -27,6 +36,47 @@ end
 function logsumexp(x; γ=1)
     c = maximum(x)
     return c + γ * log(sum(exp.((x .- c)/γ)))
+end
+
+function logsumexp(X; dims, γ=1)
+    c = maximum(X; dims)
+    return c .+ γ * log.(sum(exp.((X .- c)/γ); dims))
+end
+
+function softmax(x; γ=1)
+    m = logsumexp(x; γ)
+    return exp.( (x .- m) / γ)
+end
+
+function softmax(X; dims, γ=1)
+    m = logsumexp(X; dims, γ)
+    return exp.( (X .- m) / γ)
+end
+
+"""
+    gumbel_softmax(lp::Vector; τ::Number=0.1)
+
+Compute the Gumbel softmax approximation of sampling a one-hot-vector the logarithm
+of an (unnormalized) probability vector. `τ` is the temperature parameter determining
+the quality of the approximation.
+"""
+function gumbel_softmax(lp::Vector; τ::Number=0.1)
+    z = lp .+ randg(length(lp))
+    z = z .- logsumexp(z; γ=τ)
+    return exp.(z ./ τ)
+end
+
+"""
+    gumbel_softmax(lp::Array; τ::Number=0.1, dims=2)
+
+Compute the Gumbel softmax approximation of sampling a one-hot-vector the logarithm
+of an (unnormalized) probability matric (row-wise by default). `τ` is the temperature
+parameter determining the quality of the approximation.
+"""
+function gumbel_softmax(lp::Array; τ::Number=0.1, dims=2)
+	Z = lp .+ randg(size(lp)...)
+	Z = Z .- logsumexp(Z; dims, γ=τ)
+    return exp.(Z ./ γ)
 end
 
 # dot product that only consider finite numbers
