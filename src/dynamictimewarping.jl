@@ -1,6 +1,6 @@
 #=
 Created on Friday 06 November 2020
-Last update: Tuesday 2 March 2021
+Last update: Friday 5 March 2021
 
 @author: Michiel Stock
 michielfmstock@gmail.com
@@ -23,8 +23,8 @@ struct DTW{T<:AbstractFloat}
 	Q::Array{T,3}
 end
 
-getE(dtw::DTW) = @view(E[2:end-1, 2:end-1])
-getD(dtw::DTW) = @view(D[2:end, 2:end])
+getE(dtw::DTW) = @view(dtw.E[2:end-1, 2:end-1])
+getD(dtw::DTW) = @view(dtw.D[2:end, 2:end])
 
 DTW(T::Type{<:AbstractFloat}, n::Int, m::Int) = DTW(Matrix{T}(undef, n+1, m+1),
 											Matrix{T}(undef, n+2, m+2),
@@ -35,7 +35,7 @@ DTW(θ::Matrix) = DTW(eltype(θ), size(θ)...)
 
 function dynamic_time_warping(mo::MaxOperator, θ, D)
     n, m = size(θ)
-    @assert size(D) == (n+1, m+1) "The dimensions of the DP matrix and θ do not agree"
+    @assert size(D, 1) > n && size(D, 2) > m "The dimensions of the DP matrix and θ do not agree"
 	D[:,1] .= Inf
 	D[1,:] .= Inf
 	D[1,1] = 0.0
@@ -44,7 +44,7 @@ function dynamic_time_warping(mo::MaxOperator, θ, D)
 		y = zeros(eltype(D), 3)
 	 	 D[i+1,j+1] = minimum(mo, y) + θ[i,j]
 	end
-    return last(D)
+    return D[n+1, m+1]
 end
 
 """
@@ -58,10 +58,10 @@ dynamic_time_warping(mo::MaxOperator, θ, dtw::DTW) = dynamic_time_warping(mo, �
 function ∂DPW(mo::MaxOperator, θ, D, E, Q)
     n, m = size(θ)
     fill!(Q, 0)
-	Q[end, end, 2] = 1
-	E[:,end] .= 0
-	E[end,:] .= 0
-	E[end,end] = 1
+	Q[n+2, m+2, 2] = 1
+	E[:,m+2] .= 0
+	E[n+2,:] .= 0
+	E[n+2,m+2] = 1
 	D[:,1] .= Inf
 	D[1,:] .= Inf
 	D[1,1] = 0.0
@@ -76,7 +76,7 @@ function ∂DPW(mo::MaxOperator, θ, D, E, Q)
 	@inbounds for j in m:-1:1, i in n:-1:1
         E[i+1,j+1] = Q[i+1,j+2,1] * E[i+1,j+2] + Q[i+2,j+2,2] * E[i+2,j+2] + Q[i+2,j+1,3] * E[i+2,j+1]
 	end
-	return @view(D[2:end,2:end]), @view(E[2:end-1, 2:end-1])
+	return @view(D[2:n+1,2:m+1]), @view(E[2:n+1,2:m+1])
 end
 
 ∂DPW(mo::MaxOperator, θ, dtw::DTW) = ∂DPW(mo::MaxOperator, θ, dtw.D, dtw.E, dtw.Q)
