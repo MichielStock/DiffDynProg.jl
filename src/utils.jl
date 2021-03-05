@@ -9,14 +9,8 @@ General utilities used by the function of this package but
 are themselves not the main product.
 =#
 
-# Generating Gumbel random values
 
-randg() = - log(-log(rand()))
 
-"""sample a vector or array of values from Gumbel(0, 1)"""
-randg(n::Int...) = - log.(-log.(rand(n...)))
-
-exprandg(n::Int) = 1.0 ./ -log.(rand(n))
 
 # TODO: make this more efficient
 """
@@ -33,24 +27,52 @@ function project_in_simplex(v::Vector{T}, z::Number) where {T<:Number}
     return max.(v .- θ, zero(T))
 end
 
-function logsumexp(x; γ=1)
+# dot product that only consider finite numbers
+fin_dot(q, x) = sum(qᵢ * xᵢ for (qᵢ, xᵢ) in zip(q, x) if qᵢ > 0 && xᵢ > -Inf)
+# finite mean that only considers finite numbers
+fin_mean(x) = mean((xᵢ for xᵢ in x if xᵢ > -Inf))
+
+
+gap_cost_matrix(n::Int, m::Int) = -(0:n-1) .- (0:m-1)'
+gap_cost_matrix(cx::Vector, cy::Vector) = -cumsum(cx) .- cumsum(cy)'
+
+# TODO: check this gradient, I do not trust it 100%...
+function rrule(::typeof(gap_cost_matrix), cx::Vector, cy::Vector)
+    n, m = length(cx), length(cy)
+    csx = cumsum(cx)
+    csy = cumsum(cy)
+    return -csx .- csy',  ȳ -> (NO_FIELDS, -ȳ * (m:-1.0:1), -ȳ' * (n:-1.0:1))
+end
+
+# Generating Gumbel random values
+
+randg() = - log(-log(rand()))
+
+"""sample a vector or array of values from Gumbel(0, 1)"""
+randg(n::Int...) = - log.(-log.(rand(n...)))
+
+exprandg(n::Int) = 1.0 ./ -log.(rand(n))
+
+function _logsumexp(x; γ=1)
     c = maximum(x)
     return c + γ * log(sum(exp.((x .- c)/γ)))
 end
 
-function logsumexp(X; dims, γ=1)
+function logsumexp(X; dims::Union{Nothing,Int}=nothing, γ=1)
+    dims isa Nothing && return _logsumexp(X; γ)
     c = maximum(X; dims)
     return c .+ γ * log.(sum(exp.((X .- c)/γ); dims))
 end
 
-function softmax(x; γ=1)
+function _softmax(x; γ=1)
     m = logsumexp(x; γ)
-    return exp.( (x .- m) / γ)
+    return exp.((x .- m)/γ)
 end
 
-function softmax(X; dims, γ=1)
+function softmax(X; dims::Union{Nothing,Int}=nothing, γ=1)
+    dims isa Nothing && return _softmax(X; γ)
     m = logsumexp(X; dims, γ)
-    return exp.( (X .- m) / γ)
+    return exp.((X .- m)/γ)
 end
 
 """
@@ -76,23 +98,6 @@ parameter determining the quality of the approximation.
 function gumbel_softmax(lp::Array; τ::Number=0.1, dims=2)
 	Z = lp .+ randg(size(lp)...)
 	Z = Z .- logsumexp(Z; dims, γ=τ)
-    return exp.(Z ./ γ)
-end
-
-# dot product that only consider finite numbers
-fin_dot(q, x) = sum(qᵢ * xᵢ for (qᵢ, xᵢ) in zip(q, x) if qᵢ > 0 && xᵢ > -Inf)
-# finite mean that only considers finite numbers
-fin_mean(x) = mean((xᵢ for xᵢ in x if xᵢ > -Inf))
-
-
-gap_cost_matrix(n::Int, m::Int) = -(0:n-1) .- (0:m-1)'
-gap_cost_matrix(cx::Vector, cy::Vector) = -cumsum(cx) .- cumsum(cy)'
-
-# TODO: check this gradient, I do not trust it 100%...
-function rrule(::typeof(gap_cost_matrix), cx::Vector, cy::Vector)
-    n, m = length(cx), length(cy)
-    csx = cumsum(cx)
-    csy = cumsum(cy)
-    return -csx .- csy',  ȳ -> (NO_FIELDS, -ȳ * (m:-1.0:1), -ȳ' * (n:-1.0:1))
+    return exp.(Z ./ τ)
 end
 
