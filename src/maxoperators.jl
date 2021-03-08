@@ -71,7 +71,7 @@ end
 function maximum(mo::SquaredMax, x::Vector{<:Number})
     γ = mo.γ
     q = project_in_simplex(x ./ γ , one(γ))
-    return fin_dot(q, x) - (γ/2) * norm(q)^2
+    return q ⋅ x - (γ/2) * norm(q)^2
 end
 
 # Chain Rules
@@ -107,7 +107,7 @@ end
 function frule(::typeof(maximum), mo::SquaredMax, x::Vector{<:Number})
     γ = mo.γ
     q = project_in_simplex(x ./ γ, one(γ))
-    m = fin_dot(q, x) - (γ/2) * (q ⋅ q)
+    m = q ⋅ x - (γ/2) * (q ⋅ q)
     return m, q
 end
 

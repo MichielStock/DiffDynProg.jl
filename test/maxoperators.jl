@@ -2,7 +2,7 @@
 
     @testset "maximum" begin 
         x = [1.0, 2.0, 5.0]
-        y = [-1.2, 3.3, 5, -Inf, 0.1]
+        y = [-1.2, 3.3, 5, -maxintfloat(Float64), 0.1]
 
 
         for mo in [Max(), LeakyMax(), EntropyMax(), SquaredMax()]
@@ -23,7 +23,7 @@
 
     @testset "minimum" begin 
     x = -[1.0, 2.0, 5.0]
-    y = -[-1.2, 3.3, 5, -Inf, 0.1]
+    y = -[-1.2, 3.3, 5, maxintfloat(Float64), 0.1]
 
 
     for mo in [Max(), LeakyMax(), EntropyMax(), SquaredMax()]

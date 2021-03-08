@@ -12,8 +12,8 @@ according to Mench and Blondel.
 function dynamic_time_warping(mo::MaxOperator, θ, D)
     n, m = size(θ)
     @assert size(D, 1) > n && size(D, 2) > m "The dimensions of the DP matrix `D`` and `θ` do not agree"
-	D[:,1] .= Inf
-	D[1,:] .= Inf
+	D[:,1] .= maxintfloat(eltype(D))
+	D[1,:] .= maxintfloat(eltype(D))
 	D[1,1] = 0.0
 	y = zeros(eltype(D), 3)
 	@inbounds for j in 1:m, i in 1:n
@@ -39,8 +39,8 @@ function ∂DTW(mo::MaxOperator, θ, D, E, Q)
 	E[:,m+2] .= 0
 	E[n+2,:] .= 0
 	E[n+2,m+2] = 1
-	D[:,1] .= Inf
-	D[1,:] .= Inf
+	D[:,1] .= maxintfloat(eltype(D))
+	D[1,:] .= maxintfloat(eltype(D))
 	D[1,1] = 0.0
     y = zeros(eltype(D), 3)
 	@inbounds for j in 1:m, i in 1:n
