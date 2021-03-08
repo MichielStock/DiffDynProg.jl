@@ -1,6 +1,6 @@
 #=
 Created on 06/03/2021 12:46:55
-Last update: -
+Last update: 08/03/2021
 
 @author: Michiel Stock
 michielfmstock@gmail.com
@@ -25,6 +25,9 @@ DP(T::Type{<:AbstractFloat}, n::Int, m::Int) = DP(Matrix{T}(undef, n+1, m+1),
 											Array{T}(undef, n+2, m+2, 3))
 DP(n::Int, m::Int) = DP(Float64, n, m)
 DP(θ::Matrix) = DP(eltype(θ), size(θ)...)
+
+Base.size(dp::DP) = (size(dp.D, 1) - 1, size(dp.D, 2) - 1)
+Base.eltype(::DP{T}) where {T} = T
 
 # getter functions
 
