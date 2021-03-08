@@ -64,11 +64,21 @@ end
 
 ∂NW(mo::MaxOperator, θ::Matrix, g::Number) = ∂NW(mo, θ, g, DP(θ))
 
+
+# Gradients in ChainRulesCore
+
+function rrule(::typeof(needleman_wunsch), mo::MaxOperator, θ::Matrix, g::Number, dp::DP)
+	n, m = size(θ)
+	D, E = ∂NW(mo, θ, -g, dp)
+	return last(D), ȳ -> (NO_FIELDS, Zero(), ȳ * E, Zero(), Zero())
+end
+
 #=
 This is a test
 θ = [-3 -5 -3 0 -3;
     -1 7 -1 -3 -1;
-    10 -1 10 -4 10]
+    10 -1 10 -4 10.0]
+
 
 n, m = size(θ)
 g = 5
