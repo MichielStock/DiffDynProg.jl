@@ -31,7 +31,7 @@ Performs dynamic time warping using a maximum operators `mo`, a weight matrix
 """
 dynamic_time_warping(mo::MaxOperator, θ, dp::DP) = dynamic_time_warping(mo, θ, dp.D)
 
-function ∂DPW(mo::MaxOperator, θ, D, E, Q)
+function ∂DTW(mo::MaxOperator, θ, D, E, Q)
     n, m = size(θ)
 	@assert size(D, 1) > n && size(D, 2) > m "The dimensions of the DP matrix `D`` and `θ` do not agree"
     fill!(Q, 0)
@@ -56,20 +56,20 @@ function ∂DPW(mo::MaxOperator, θ, D, E, Q)
 	return @view(D[2:n+1,2:m+1]), @view(E[2:n+1,2:m+1])
 end
 
-∂DPW(mo::MaxOperator, θ, dp::DP) = ∂DPW(mo::MaxOperator, θ, dp.D, dp.E, dp.Q)
+∂DTW(mo::MaxOperator, θ, dp::DP) = ∂DTW(mo::MaxOperator, θ, dp.D, dp.E, dp.Q)
 
 function rrule(::typeof(dynamic_time_warping), mo::MaxOperator, θ, dp::DP)
 	n, m = size(θ)
-	D, E = ∂DPW(mo, θ, dp)
+	D, E = ∂DTW(mo, θ, dp)
 	return last(D[n+1, m+1]), ȳ -> (NO_FIELDS, Zero(), ȳ * E, Zero())
 end
 
-function ∂DPW(mo::MaxOperator, θ::Matrix{T} where {T})
+function ∂DTW(mo::MaxOperator, θ::Matrix{T} where {T})
     n, m = size(θ)
     Q = zeros(n+2, m+2, 3)
     E = zeros(n+2, m+2)
     D = zeros(n+1, m+1)
-    return ∂DPW!(mo, θ, D, E, Q)
+    return ∂DTW(mo, θ, D, E, Q)
 end
 
 
