@@ -10,5 +10,6 @@ import ChainRulesCore: rrule
 include("maxoperators.jl")
 include("utils.jl")
 include("dynamictimewarping.jl")
+include("needlemanwunch.jl")
 
 end
