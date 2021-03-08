@@ -55,7 +55,7 @@ function ∂NW(mo::MaxOperator, θ::Matrix, g::Number, D::AbstractMatrix, E::Abs
 	end
     @inbounds for j in m:-1:1, i in n:-1:1
         # change of D[n,m] by θ[i,j]
-        E[i+1,j+1] *=  Q[i,j,2]  # amount of step in this direction
+        E[i+1,j+1] *=  Q[i+1,j+1,2]  # amount of step in this direction
 	end
 	return @view(D[2:n+1,2:m+1]), @view(E[2:n+1,2:m+1])
 end
