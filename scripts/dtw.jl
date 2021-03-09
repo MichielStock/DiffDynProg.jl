@@ -1,6 +1,6 @@
 #=
 Created on 26/02/2021 15:21:24
-Last update: -
+Last update: 09 March 2021
 
 @author: Michiel Stock
 michielfmstock@gmail.com
@@ -35,23 +35,23 @@ scatter!(t, label="t")
 hθ = heatmap(θ, title="weight matrix", xlabel="i", ylabel="j")
 
 # build a DTW
-dtw = DTW(θ)
+dtw = DP(θ)
 
 # align
 c = dynamic_time_warping(Max(), θ, dtw)
 # gradient, here the gradient is just the mapping
-c, E_max = ∂DPW(Max(), θ, dtw)
+c, E_max = ∂DTW(Max(), θ, dtw)
 # get filled DP matrix
 D = dtw.D[2:end, 2:end]
 hD = heatmap(D, title="D (regular max)")
 hmax = heatmap(E_max, title="Max")
 
 # entropy max
-c, E_em = ∂DPW(EntropyMax(0.1), θ, dtw)
+c, E_em = ∂DTW(EntropyMax(0.1), θ, dtw)
 hem = heatmap(E_em, title="Entropy max")
 
 # squared max
-c, E_sm = ∂DPW(SquaredMax(.1), θ, dtw)
+c, E_sm = ∂DTW(SquaredMax(.1), θ, dtw)
 hsm = heatmap(E_sm, title="Squared max")
 
 for (c, E) in zip(["red"], [E_em])

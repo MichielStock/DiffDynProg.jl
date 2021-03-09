@@ -1,6 +1,6 @@
 #=
 Created on Friday 06 November 2020
-Last update: Friday 5 March 2021
+Last update: Tuesday 09 March 2021
 
 @author: Michiel Stock
 michielfmstock@gmail.com
@@ -58,11 +58,6 @@ end
 
 ∂DTW(mo::MaxOperator, θ, dp::DP) = ∂DTW(mo::MaxOperator, θ, dp.D, dp.E, dp.Q)
 
-function rrule(::typeof(dynamic_time_warping), mo::MaxOperator, θ, dp::DP)
-	n, m = size(θ)
-	D, E = ∂DTW(mo, θ, dp)
-	return last(D[n+1, m+1]), ȳ -> (NO_FIELDS, Zero(), ȳ * E, Zero())
-end
 
 function ∂DTW(mo::MaxOperator, θ::Matrix{T} where {T})
     n, m = size(θ)
@@ -72,4 +67,9 @@ function ∂DTW(mo::MaxOperator, θ::Matrix{T} where {T})
     return ∂DTW(mo, θ, D, E, Q)
 end
 
+
+function rrule(::typeof(dynamic_time_warping), mo::MaxOperator, θ, dp::DP)
+	D, E = ∂DTW(mo, θ, dp)
+	return last(D), ȳ -> (NO_FIELDS, Zero(), ȳ * E, Zero())
+end
 
