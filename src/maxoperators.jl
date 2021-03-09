@@ -40,6 +40,8 @@ struct EntropyMax{T<:AbstractFloat} <: MaxOperator
     end
 end
 
+EntropyMax(γ::Integer) = EntropyMax(Float64(γ))
+
 struct SquaredMax{T<:AbstractFloat} <: MaxOperator
     γ::T
     function SquaredMax(γ::T=1.0) where {T<:AbstractFloat}
@@ -47,6 +49,8 @@ struct SquaredMax{T<:AbstractFloat} <: MaxOperator
         return new{T}(γ)
     end
 end
+
+SquaredMax(γ::Integer) = SquaredMax(Float64(γ))
 
 # Maximization functions
 # ----------------------
@@ -67,7 +71,7 @@ end
 function maximum(mo::SquaredMax, x::Vector{<:Number})
     γ = mo.γ
     q = project_in_simplex(x ./ γ , one(γ))
-    return fin_dot(q, x) - (γ/2) * norm(q)^2
+    return q ⋅ x - (γ/2) * norm(q)^2
 end
 
 # Chain Rules
@@ -103,7 +107,7 @@ end
 function frule(::typeof(maximum), mo::SquaredMax, x::Vector{<:Number})
     γ = mo.γ
     q = project_in_simplex(x ./ γ, one(γ))
-    m = fin_dot(q, x) - (γ/2) * norm(q)^2
+    m = q ⋅ x - (γ/2) * (q ⋅ q)
     return m, q
 end
 

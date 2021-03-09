@@ -29,3 +29,23 @@ using Zygote
 logsumexp(x)
 
 gradient(x-> logsumexp(x, γ=20), x)
+
+# a more complex example
+
+h(x, y; pow=2) = (2x + y^2)^pow
+
+function rrule(::typeof(h), x, y; pow=2)
+    println("rrule")
+    return h(x,y;pow), (ȳ) -> (NO_FIELDS, ȳ*2pow * (2x+y^2)^(pow-1), y*2y*pow * (2x+y^2)^(pow-1))
+end
+
+gradient(h, 1.0, 2.0)
+
+gradient((x,y)->h(x,y, pow=3), 1.0, 2.0)
+
+g(x, y, a=2) = (2x + y^2)^a
+
+function rrule(::typeof(g), x, y, a=3)
+    println("rrule")
+    return g(x,y,a), (ȳ) -> (NO_FIELDS, ȳ*a * (2x+y^2)^(a-1), y*2y*a * (2x+y^2)^(a-1), Zero())
+end
