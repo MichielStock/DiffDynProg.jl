@@ -49,38 +49,32 @@ end
 const sequences = [mutate(progenitor_seq, T) for i in 1:n]
 
 lmax = maximum(length.(sequences))
-const dtw = DTW(Float32, lmax, lmax)
+dp = DP(Float32, lmax, lmax)
 
 S = zeros(Float32, k, k)
 c = Float32(1)
 
 
 
-function loss(S; λ=1e0)
+function loss(S; λ=1e-1)
     cost = zero(eltype(S))
     n = length(S)
     lmax = maximum(length.(sequences))
     for (i, seq1) in enumerate(sequences)
         for (j, seq2) in enumerate(sequences[(i+1):end])
-            θ = - S[seq1,seq2]
-            cost += dynamic_time_warping(EntropyMax(Float32(0.1)), θ, dtw)
+            θ = S[seq1,seq2]
+            cost -= needleman_wunsch(EntropyMax(Float32(1)), θ, 1, dp)
         end
     end
     return cost / (n * (n-1) / 2) + λ * sum(abs2, S)
 end
 
-∇S = zero(S)
-momentum = 0.5
-stepsize = 0.1
+ΔS = zero(S)
+momentum = 0.8
+stepsize = 0.03
 
-for t in 1:100
+for t in 1:500
     println("step $t: loss=$(loss(S))")
-    ∇S .= momentum .* ∇S + (1 - momentum) .* loss'(S)
-    S .-= stepsize * ∇S
+    ΔS .= momentum .* ΔS + (1.0 - momentum) .* loss'(S)
+    S .-= stepsize * (ΔS .+ ΔS')/2 
 end
-
-using Optim
-
-minimizer = optimize(loss, S, autodiff=:forward, g_tol=0.1)
-
-

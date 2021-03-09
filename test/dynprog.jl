@@ -36,15 +36,16 @@ end
 end
 
 @testset "Needleman Wunsch" begin
-    s1 = needleman_wunsch(Max(), θ, -1, dp)
-    s2 = needleman_wunsch(EntropyMax(1.0), θ, -1, dp)
+    s1 = needleman_wunsch(Max(), θ, 1, dp)
+    s2 = needleman_wunsch(EntropyMax(1.0), θ, 1, dp)
+    s3 = needleman_wunsch(EntropyMax(1.0), θ, ones(n), ones(m), dp)
     
-    D, E = ∂NW(Max(), θ, -1, dp)
+    D, E = ∂NW(Max(), θ, 1, dp)
 
     @test s1 ≈ last(D)
     @test size(E) == (n, m)
 
-    D, E = ∂NW(EntropyMax(1.0), θ, -1)
+    D, E = ∂NW(EntropyMax(1.0), θ, 1)
     @test s2 ≈ last(D)
     @test size(E) == (n, m)
 end
