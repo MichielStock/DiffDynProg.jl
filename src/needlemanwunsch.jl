@@ -1,6 +1,6 @@
 #=
 Created on 05/03/2021 16:09:30
-Last update: Monday 08 March 2021
+Last update: Thurday 11 March 2021
 
 @author: Michiel Stock
 michielfmstock@gmail.com
@@ -8,8 +8,6 @@ michielfmstock@gmail.com
 Implementation of Needleman-Wunsch and its gradients
 according to Mench and Blondel.
 =#
-
-# TODO: variable gap cost
 
 # NW with fixed cost
 
@@ -75,7 +73,6 @@ function ∂NW(mo::MaxOperator, θ::AbstractMatrix, g::Number, D::AbstractMatrix
         # change of D[n,m] by D[i,j]
         E[i+1,j+1] = Q[i+1,j+2,1] * E[i+1,j+2] + Q[i+2,j+2,2] * E[i+2,j+2] + Q[i+2,j+1,3] * E[i+2,j+1]
 	end
-	E .*= @view(Q[:,:,2])
 	return @view(D[2:n+1,2:m+1]), @view(E[2:n+1,2:m+1])
 end
 
@@ -106,16 +103,7 @@ function ∂NW(mo::MaxOperator, θ::AbstractMatrix, gs::Vector, gt::Vector, D::A
         # change of D[n,m] by D[i,j]
         E[i+1,j+1] = Q[i+1,j+2,1] * E[i+1,j+2] + Q[i+2,j+2,2] * E[i+2,j+2] + Q[i+2,j+1,3] * E[i+2,j+1]
 	end
-	dgs = similar(gs)
-	for i in 1:n
-		dgs[i] = @view(Q[i+1,2:m+1,1]) ⋅ @view(E[i+1,2:m+1])
-	end
-	dgt = similar(gt)
-	for j in 1:m
-		dgt[j] = @view(Q[2:n+1,j+1,3]) ⋅ @view(E[2:n+1,j+1])
-	end
-	E .*= @view(Q[:,:,2])
-	return @view(D[2:n+1,2:m+1]), @view(E[2:n+1,2:m+1]), dgs, dgt
+	return @view(D[2:n+1,2:m+1]), @view(E[2:n+1,2:m+1])
 end
 
 ∂NW(mo::MaxOperator, θ::AbstractMatrix, gs::Vector, gt::Vector, dp::DP) = ∂NW(mo::MaxOperator, θ::Matrix, gs, gt, dp.D, dp.E, dp.Q)
@@ -126,12 +114,25 @@ end
 function rrule(::typeof(needleman_wunsch), mo::MaxOperator, θ::AbstractMatrix, g::Number, dp::DP)
 	n, m = size(θ)
 	D, E = ∂NW(mo, θ, g, dp)
+	# change of D[n,m] by θ[i,j]
+	dp.E .*= @view(dp.Q[:,:,2])
 	return last(D), ȳ -> (NO_FIELDS, Zero(), ȳ * E, Zero(), Zero())
 end
 
 function rrule(::typeof(needleman_wunsch), mo::MaxOperator, θ::AbstractMatrix, gs::Vector, gt::Vector, dp::DP)
 	n, m = size(θ)
-	D, E, dgs, dgt = ∂NW(mo, θ, gs, gt, dp)
+	D, E = ∂NW(mo, θ, gs, gt, dp)
+	# gradient wrt the two gap cost vectors
+	dgs = similar(gs)
+	for i in 1:n
+		dgs[i] = @view(dp.Q[i+1,2:m+1,1]) ⋅ @view(dp.E[i+1,2:m+1])
+	end
+	dgt = similar(gt)
+	for j in 1:m
+		dgt[j] = @view(dp.Q[2:n+1,j+1,3]) ⋅ @view(dp.E[2:n+1,j+1])
+	end
+	# change of D[n,m] by θ[i,j]
+	dp.E .*= @view(dp.Q[:,:,2])
 	return last(D), ȳ -> (NO_FIELDS, Zero(), ȳ * E, ȳ * dgs, ȳ * dgt, Zero())
 end
 
