@@ -69,9 +69,9 @@ function loss(S; λ=1e-1)
     return cost / (n * (n-1) / 2) + λ * sum(abs2, S)
 end
 
-ΔS = zero(S)
-momentum = 0.8
-stepsize = 0.03
+ΔS = loss'(S)
+momentum = 0.5
+stepsize = 0.1
 
 for t in 1:500
     println("step $t: loss=$(loss(S))")

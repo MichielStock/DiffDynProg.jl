@@ -38,7 +38,7 @@ end
 @testset "Needleman Wunsch" begin
     s1 = needleman_wunsch(Max(), θ, 1, dp)
     s2 = needleman_wunsch(EntropyMax(1.0), θ, 1, dp)
-    s3 = needleman_wunsch(EntropyMax(1.0), θ, ones(n), ones(m), dp)
+    s3 = needleman_wunsch(EntropyMax(1.0), θ, (ones(n), ones(m)), dp)
     
     D, E = ∂NW(Max(), θ, 1, dp)
 

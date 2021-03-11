@@ -29,11 +29,11 @@ function needleman_wunsch(mo::MaxOperator, θ::AbstractMatrix, g::Number)
     return needleman_wunsch(mo, θ, g, D)
 end
 
-needleman_wunsch(mo::MaxOperator, θ::Matrix, g::Number, dp::DP) = needleman_wunsch(mo, θ, g, dp.D) 
+needleman_wunsch(mo::MaxOperator, θ::Matrix, g, dp::DP) = needleman_wunsch(mo, θ, g, dp.D) 
 
 # NW with variable cost
 
-function needleman_wunsch(mo::MaxOperator, θ::Matrix, gs::Vector, gt::Vector, D::Matrix)
+function needleman_wunsch(mo::MaxOperator, θ::Matrix, (gs, gt)::Tuple{<:AbstractVector,<:AbstractVector}, D::Matrix)
     n, m = size(θ)
     @assert size(D, 1) > n && size(D, 2) > m "The dimensions of the DP matrix `D`` and `θ` do not agree"
 	D[1,1] = 0
@@ -47,7 +47,7 @@ function needleman_wunsch(mo::MaxOperator, θ::Matrix, gs::Vector, gt::Vector, D
     return D[n+1, m+1]
 end
 
-needleman_wunsch(mo::MaxOperator, θ::AbstractMatrix, gs::Vector, gt::Vector, dp::DP) = needleman_wunsch(mo, θ, gs, gt, dp.D)
+#needleman_wunsch(mo::MaxOperator, θ::AbstractMatrix, (gs, gt), dp::DP) = needleman_wunsch(mo, θ, gs, gt, dp.D)
 
 # NW gradients
 
@@ -76,11 +76,10 @@ function ∂NW(mo::MaxOperator, θ::AbstractMatrix, g::Number, D::AbstractMatrix
 	return @view(D[2:n+1,2:m+1]), @view(E[2:n+1,2:m+1])
 end
 
-∂NW(mo::MaxOperator, θ::AbstractMatrix, g::Number, dp::DP) = ∂NW(mo::MaxOperator, θ::Matrix, g::Number, dp.D, dp.E, dp.Q)
+∂NW(mo::MaxOperator, θ::AbstractMatrix, g, dp::DP) = ∂NW(mo::MaxOperator, θ::Matrix, g, dp.D, dp.E, dp.Q)
+∂NW(mo::MaxOperator, θ::AbstractMatrix, g) = ∂NW(mo, θ, g, DP(θ))
 
-∂NW(mo::MaxOperator, θ::AbstractMatrix, g::Number) = ∂NW(mo, θ, g, DP(θ))
-
-function ∂NW(mo::MaxOperator, θ::AbstractMatrix, gs::Vector, gt::Vector, D::AbstractMatrix, E::AbstractMatrix, Q::AbstractArray)
+function ∂NW(mo::MaxOperator, θ::AbstractMatrix, (gs, gt)::Tuple{<:AbstractVector,<:AbstractVector}, D::AbstractMatrix, E::AbstractMatrix, Q::AbstractArray)
     T = eltype(E)
     n, m = size(θ)
 	@assert size(D, 1) > n && size(D, 2) > m "The dimensions of the DP matrix `D`` and `θ` do not agree"
@@ -106,8 +105,33 @@ function ∂NW(mo::MaxOperator, θ::AbstractMatrix, gs::Vector, gt::Vector, D::A
 	return @view(D[2:n+1,2:m+1]), @view(E[2:n+1,2:m+1])
 end
 
-∂NW(mo::MaxOperator, θ::AbstractMatrix, gs::Vector, gt::Vector, dp::DP) = ∂NW(mo::MaxOperator, θ::Matrix, gs, gt, dp.D, dp.E, dp.Q)
-∂NW(mo::MaxOperator, θ::AbstractMatrix, gs::Vector, gt::Vector) = ∂NW(mo::MaxOperator, θ::AbstractMatrix, gs::Vector, gt::Vector, DP(θ))
+#∂NW(mo::MaxOperator, θ::AbstractMatrix, gs, gt, dp::DP) = ∂NW(mo::MaxOperator, θ::Matrix, gs, gt, dp.D, dp.E, dp.Q)
+#∂NW(mo::MaxOperator, θ::AbstractMatrix, gs, gt) = ∂NW(mo::MaxOperator, θ::AbstractMatrix, gs, gt, DP(θ))
+
+# specific gradients
+
+# this is a dummy where one can specify the direction 
+
+function ∂NW_(dir::Int, mo::MaxOperator, θ::AbstractMatrix, g, dp::DP)
+	D, E = ∂NW(mo, θ, g, dp)
+	dp.E .*= @view(dp.Q[:,:,dir])
+	return D, E
+end
+
+∂NW_(dir::Int, mo::MaxOperator, θ::AbstractMatrix, g) = ∂NW_(dir, mo, θ, g, DP(θ))
+
+∂NW_θ(args...) = ∂NW_(2, args...)
+∂NW_gs(args...) = ∂NW_(1, args...)
+∂NW_gt(args...) = ∂NW_(3, args...)
+
+function ∂NW_all(mo::MaxOperator, θ::AbstractMatrix, g, dp::DP)
+	n, m = size(θ)
+	D, E = ∂NW(mo, θ, g, dp)
+	dp.Q .*= dp.E
+	return D, E, @view(dp.Q[2:n+1,2:m+1,2]), @view(dp.Q[2:n+1,2:m+1,1]), @view(dp.Q[2:n+1,2:m+1,3])
+end
+
+∂NW_all(mo::MaxOperator, θ::AbstractMatrix, g::Number) = ∂NW_all(mo, θ, g, DP(θ))
 
 # Gradients in ChainRulesCore
 
@@ -119,7 +143,7 @@ function rrule(::typeof(needleman_wunsch), mo::MaxOperator, θ::AbstractMatrix, 
 	return last(D), ȳ -> (NO_FIELDS, Zero(), ȳ * E, Zero(), Zero())
 end
 
-function rrule(::typeof(needleman_wunsch), mo::MaxOperator, θ::AbstractMatrix, gs::Vector, gt::Vector, dp::DP)
+function rrule(::typeof(needleman_wunsch), mo::MaxOperator, θ::AbstractMatrix, (gs, gt)::Tuple{<:AbstractVector,<:AbstractVector}, dp::DP)
 	n, m = size(θ)
 	D, E = ∂NW(mo, θ, gs, gt, dp)
 	# gradient wrt the two gap cost vectors
