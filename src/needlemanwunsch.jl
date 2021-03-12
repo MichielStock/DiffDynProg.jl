@@ -162,12 +162,13 @@ end
 
 
 #=
-This is a test
+#This is a test
 θ = 1.0 * [-3 -5 -3 0 -3;
     -1 7 -1 -3 -1;
     10 -1 10 -4 10]
 
-
+s = "FGH"
+t = "ABCDE"
 n, m = size(θ)
 g = 5
 mo = EntropyMax()
