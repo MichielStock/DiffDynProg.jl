@@ -1,6 +1,6 @@
 #=
 Created on 05/03/2021 16:09:30
-Last update: Thurday 11 March 2021
+Last update: wednesday 17 March 2021
 
 @author: Michiel Stock
 michielfmstock@gmail.com
@@ -47,7 +47,9 @@ function needleman_wunsch(mo::MaxOperator, θ::Matrix, (gs, gt)::Tuple{<:Abstrac
     return D[n+1, m+1]
 end
 
-#needleman_wunsch(mo::MaxOperator, θ::AbstractMatrix, (gs, gt), dp::DP) = needleman_wunsch(mo, θ, gs, gt, dp.D)
+# NW with a substition matrix
+
+needleman_wunsch(mo::MaxOperator, s::Vector, t::Vector, S::AbstractMatrix, args...) = needleman_wunsch(mo, S[s, t], args...)
 
 # NW gradients
 
