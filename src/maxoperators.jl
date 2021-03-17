@@ -55,7 +55,6 @@ SquaredMax(γ::Integer) = SquaredMax(Float64(γ))
 # Maximization functions
 # ----------------------
 
-#maximum(mo::MaxOperator, x::Vector{<:Number}) = max(mo, x...)
 maximum(mo::Max, x::Vector{<:Number}) = maximum(x)
 
 function maximum(mo::LeakyMax{T}, x::Vector{<:Number}) where {T}
