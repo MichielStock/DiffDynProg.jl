@@ -36,7 +36,7 @@ fin_mean(x) = mean((xᵢ for xᵢ in x if xᵢ > -Inf))
 gap_cost_matrix(n::Int, m::Int) = -(0:n-1) .- (0:m-1)'
 gap_cost_matrix(cx::Vector, cy::Vector) = -cumsum(cx) .- cumsum(cy)'
 
-# TODO: check this gradient, I do not trust it 100%...
+
 function rrule(::typeof(gap_cost_matrix), cx::Vector, cy::Vector)
     n, m = length(cx), length(cy)
     csx = cumsum(cx)
@@ -66,7 +66,7 @@ end
 
 function _softmax(x; γ=1)
     m = logsumexp(x; γ)
-    return exp.((x .- m)/γ)
+    return exp.((x .- m) / γ)
 end
 
 function softmax(X; dims::Union{Nothing,Int}=nothing, γ=1)
