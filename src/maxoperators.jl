@@ -8,6 +8,8 @@ michielfmstock@gmail.com
 Implementation of the smooth max operators and their gradients.
 =#
 
+# TODO: version that works with tuples
+
 using LinearAlgebra: ⋅, norm
 using StatsBase: mean
 using ChainRulesCore
