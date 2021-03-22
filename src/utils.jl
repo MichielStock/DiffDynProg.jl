@@ -27,7 +27,21 @@ function project_in_simplex(v::Vector{T}, z::Number) where {T<:Number}
     return max.(v .- θ, zero(T))
 end
 
-project_in_simplex(v::Tuple, z::Number) = project_in_simplex([v...], z)
+project_in_simplex(v::Tuple, z) = project_in_simplex([v...], z)
+
+function project_in_simplex((v₁, v₂, v₃)::NTuple{3,T}, z) where {T<:Number}
+    μ₁, μ₂, μ₃ = v₁, v₂, v₃
+    # three comparisions to sort
+    if μ₁ < μ₂; μ₁, μ₂ = μ₂, μ₁; end
+    if μ₂ < μ₃; μ₂, μ₃ = μ₃, μ₂; end
+    if μ₁ < μ₂; μ₁, μ₂ = μ₂, μ₁; end
+    # find theta
+    θ = μ₁ - z
+    μ₂ - 0.5 * (μ₁ + μ₂ - z) > 0.0 && (θ = 0.5 * (μ₁ + μ₂ - z))
+    μ₃ - (1.0 / 3.0) * (μ₁ + μ₂ + μ₃ - z) > 0.0 && (θ = (1.0 / 3.0) * (μ₁ + μ₂ + μ₃ - z))
+    # return vector
+    return max.((v₁, v₂, v₃) .- θ, zero(T))
+end
 
 # dot product that only consider finite numbers
 fin_dot(q, x) = sum(qᵢ * xᵢ for (qᵢ, xᵢ) in zip(q, x) if qᵢ > 0 && xᵢ > -Inf)
