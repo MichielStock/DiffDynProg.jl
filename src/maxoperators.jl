@@ -71,7 +71,7 @@ end
 
 function smoothmax(mo::SquaredMax, x)
     γ = mo.γ
-    q = project_in_simplex(x ./ γ , one(γ))
+    q = project_in_simplex(x ./ γ , 1)
     return q ⋅ x - (γ/2) * (q ⋅ q)
 end
 
@@ -107,7 +107,7 @@ end
 
 function frule(::typeof(smoothmax), mo::SquaredMax, x)
     γ = mo.γ
-    q = project_in_simplex(x ./ γ, one(γ))
+    q = project_in_simplex(x ./ γ, 1)
     m = q ⋅ x - (γ/2) * (q ⋅ q)
     return m, q
 end
