@@ -1,6 +1,6 @@
 #=
 Created on 07/12/2020 09:23:01
-Last update: Tuesday 2 March 2021
+Last update: Monday 22 March 2021
 
 @author: Michiel Stock
 michielfmstock@gmail.com
@@ -57,36 +57,36 @@ SquaredMax(γ::Integer) = SquaredMax(Float64(γ))
 # Maximization functions
 # ----------------------
 
-maximum(mo::Max, x::Vector{<:Number}) = maximum(x)
+smoothmax(::Max, x) = maximum(x)
 
-function maximum(mo::LeakyMax{T}, x::Vector{<:Number}) where {T}
+function smoothmax(mo::LeakyMax{T}, x) where {T}
     p = mo.p
     return (one(T) - p) * maximum(x) + p * fin_mean(x)
 end
 
-function maximum(mo::EntropyMax, x::Vector{<:Number})
+function smoothmax(mo::EntropyMax, x)
     γ = mo.γ
     return logsumexp(x; γ)
 end
 
-function maximum(mo::SquaredMax, x::Vector{<:Number})
+function smoothmax(mo::SquaredMax, x)
     γ = mo.γ
     q = project_in_simplex(x ./ γ , one(γ))
-    return q ⋅ x - (γ/2) * norm(q)^2
+    return q ⋅ x - (γ/2) * (q ⋅ q)
 end
 
 # Chain Rules
 # -----------
 
-function frule(::typeof(maximum), ::Max, x::Vector{T}) where {T<:Number}
+function frule(::typeof(smoothmax), ::Max, x)
     i = argmax(x)
     m = x[i]
-    q = zeros(T, length(x))
-    q[i] = one(T)
+    q = zeros(eltype(x), length(x))
+    q[i] = one(eltype(x))
     return m, q
 end
 
-function frule(::typeof(maximum), mo::LeakyMax, x::Vector{<:Number})
+function frule(::typeof(smoothmax), mo::LeakyMax, x)
     p = mo.p
     i = argmax(x)
     pcompl = (one(p) - p)
@@ -98,14 +98,14 @@ function frule(::typeof(maximum), mo::LeakyMax, x::Vector{<:Number})
     return m, q
 end
 
-function frule(::typeof(maximum), mo::EntropyMax, x::Vector{<:Number})
+function frule(::typeof(smoothmax), mo::EntropyMax, x)
     γ = mo.γ
     m = logsumexp(x; γ)
-    q = exp.((x / γ) .- m / γ)
+    q = exp.((x ./ γ) .- m / γ)
     return m, q
 end
 
-function frule(::typeof(maximum), mo::SquaredMax, x::Vector{<:Number})
+function frule(::typeof(smoothmax), mo::SquaredMax, x)
     γ = mo.γ
     q = project_in_simplex(x ./ γ, one(γ))
     m = q ⋅ x - (γ/2) * (q ⋅ q)
@@ -113,43 +113,50 @@ function frule(::typeof(maximum), mo::SquaredMax, x::Vector{<:Number})
 end
 
 
-function rrule(::typeof(maximum), mo::MaxOperator, x::Vector{T}) where {T<:Number}
+function rrule(::typeof(smoothmax), mo::MaxOperator, x)
     m, q = max_argmax(mo, x)
     return m, ȳ -> (NO_FIELDS, Zero(), ȳ * q)
 end
 
-function rrule(::typeof(maximum), mo::EntropyMax, x::Vector{T}) where {T<:Number}
+function rrule(::typeof(smoothmax), mo::EntropyMax, x)
     γ = mo.γ
     m = logsumexp(x; γ)
-    q = exp.((x / γ) .- m / γ)
+    q = exp.((x ./ γ) .- m / γ)
     return m, ȳ -> (NO_FIELDS, Zero(), ȳ * q)
 end
 
 
 
 """
-    max_argmax(mo::MaxOperator, x::Vector{<:Number})
+    smoothmax_argmax(mo::MaxOperator, x)
 
 Returns the maximum and the argmaxim (i.e., the gradient of the max) of 
 a vector `x` using a given `MaxOperator`. 
 """
-max_argmax(mo::MaxOperator, x::Vector{<:Number}) = frule(maximum, mo, x)
+smoothmax_argmax(mo::MaxOperator, x) = frule(smoothmax, mo, x)
 
 
 # Minimum
 # -------
+smoothmin(::Max, x) = minimum(x)
+smoothmin(mo::MaxOperator, x) = -smoothmax(mo, -x)
 
-minimum(::Max, x::Vector{<:Number}) = minimum(x)
-minimum(mo::MaxOperator, x::Vector{<:Number}) = -maximum(mo, -x)
-
-function frule(::typeof(minimum), mo::MaxOperator, x::Vector{<:Number})
-    m, q = frule(maximum, mo, -x)
+function frule(::typeof(smoothmin), mo::MaxOperator, x)
+    m, q = frule(smoothmax, mo, -x)
     return -m, q
 end
 
-function rrule(::typeof(minimum), mo::MaxOperator, x::Vector{T}) where {T<:Number}
+function rrule(::typeof(smoothmin), mo::MaxOperator, x)
     m, q = min_argmin(mo, x)
     return m, ȳ -> (NO_FIELDS, Zero(), ȳ * q)
 end
 
-min_argmin(mo::MaxOperator, x::Vector{<:Number}) = frule(minimum, mo, x)
+smoothmin_argmin(mo::MaxOperator, x) = frule(smoothmin, mo, x)
+
+
+# notational shortcuts
+
+maxᵧ(args...) = smoothmax(args...) 
+minᵧ(args...)  = smoothmin(args...) 
+max_argmaxᵧ(args...)  = smoothmax_argmax(args...) 
+min_argminᵧ(args...)  = smoothmin_argmin(args...) 
