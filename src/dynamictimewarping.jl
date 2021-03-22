@@ -1,6 +1,6 @@
 #=
 Created on Friday 06 November 2020
-Last update: Tuesday 09 March 2021
+Last update: Monday 22 March 2021
 
 @author: Michiel Stock
 michielfmstock@gmail.com
@@ -15,10 +15,10 @@ function dynamic_time_warping(mo::MaxOperator, θ, D)
 	D[:,1] .= maxintfloat(eltype(D))
 	D[1,:] .= maxintfloat(eltype(D))
 	D[1,1] = 0.0
-	y = zeros(eltype(D), 3)
+	
 	@inbounds for j in 1:m, i in 1:n
-		y .= D[i+1,j], D[i,j], D[i,j+1]
-	 	 D[i+1,j+1] = minimum(mo, y) + θ[i,j]
+		y = (D[i+1,j], D[i,j], D[i,j+1])
+	 	 D[i+1,j+1] = minᵧ(mo, y) + θ[i,j]
 	end
     return D[n+1, m+1]
 end
@@ -42,11 +42,10 @@ function ∂DTW(mo::MaxOperator, θ, D, E, Q)
 	D[:,1] .= maxintfloat(eltype(D))
 	D[1,:] .= maxintfloat(eltype(D))
 	D[1,1] = 0.0
-    y = zeros(eltype(D), 3)
 	@inbounds for j in 1:m, i in 1:n
-		y .= D[i+1,j], D[i,j], D[i,j+1]
+		y = (D[i+1,j], D[i,j], D[i,j+1])
 		# caution, this overwrites y for performance purposes
-		ymin, yargmin = min_argmin(mo, y)
+		ymin, yargmin = min_argminᵧ(mo, y)
     	D[i+1,j+1] = ymin + θ[i,j]
        	Q[i+1,j+1,:] .= yargmin
 	end

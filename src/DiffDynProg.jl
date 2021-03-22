@@ -1,6 +1,7 @@
 module DiffDynProg
 
-export MaxOperator, Max, LeakyMax, EntropyMax, SquaredMax, max_argmax, min_argmin
+export MaxOperator, Max, LeakyMax, EntropyMax, SquaredMax, smoothmax, smoothmin, smoothmax_argmax, smoothmin_argmin
+export maxᵧ, minᵧ, max_argmaxᵧ, min_argminᵧ
 export gap_cost_matrix, gumbel_softmax
 export DP, getD, getE, getQ
 export dynamic_time_warping, ∂DTW
