@@ -17,9 +17,9 @@ function needleman_wunsch(mo::MaxOperator, θ::AbstractMatrix, g::Number, D::Mat
 	D[:,1] .= range(0, step=-g, length=size(D,1))
 	D[1,:] .= range(0, step=-g, length=size(D,2))
 	@inbounds for j in 1:m, i in 1:n
-	 	D[i+1,j+1] = maximum(mo, [D[i+1,j] - g, 
+	 	D[i+1,j+1] = maxᵧ(mo, (D[i+1,j] - g, 
                                     D[i,j] + θ[i,j],
-                                    D[i,j+1] - g])
+                                    D[i,j+1] - g))
 	end
     return D[n+1, m+1]
 end
@@ -40,9 +40,9 @@ function needleman_wunsch(mo::MaxOperator, θ::Matrix, (gs, gt)::Tuple{<:Abstrac
 	D[2:n+1,1] .= cumsum(gs[1:n])
 	D[1,2:m+1] .= cumsum(gt[1:m])
 	@inbounds for j in 1:m, i in 1:n
-	 	D[i+1,j+1] = maximum(mo, [D[i+1,j] - gs[i], 
+	 	D[i+1,j+1] = maxᵧ(mo, (D[i+1,j] - gs[i], 
                                     D[i,j] + θ[i,j],
-                                    D[i,j+1] - gt[j]])
+                                    D[i,j+1] - gt[j]))
 	end
     return D[n+1, m+1]
 end
@@ -65,9 +65,9 @@ function ∂NW(mo::MaxOperator, θ::AbstractMatrix, g::Number, D::AbstractMatrix
 	D[:,1] .= range(0, step=-g, length=size(D,1))
 	D[1,:] .= range(0, step=-g, length=size(D,2))
 	@inbounds for j in 1:m, i in 1:n
-		v, q = max_argmax(mo, [D[i+1,j] - g, 
+		v, q = max_argmaxᵧ(mo, (D[i+1,j] - g, 
                                 D[i,j] + θ[i,j],
-                                D[i,j+1] - g])
+                                D[i,j+1] - g))
     	D[i+1,j+1] = v
        	Q[i+1,j+1,:] .= q
 	end
@@ -94,9 +94,9 @@ function ∂NW(mo::MaxOperator, θ::AbstractMatrix, (gs, gt)::Tuple{<:AbstractVe
 	D[2:n+1,1] .= -cumsum(gs[1:n])
 	D[1,2:m+1] .= -cumsum(gt[1:m])
 	@inbounds for j in 1:m, i in 1:n
-		v, q = max_argmax(mo, [D[i+1,j] - gs[i], 
+		v, q = max_argmaxᵧ(mo, (D[i+1,j] - gs[i], 
                                 D[i,j] + θ[i,j],
-                                D[i,j+1] - gt[j]])
+                                D[i,j+1] - gt[j]))
     	D[i+1,j+1] = v
        	Q[i+1,j+1,:] .= q
 	end
@@ -147,7 +147,7 @@ end
 
 function rrule(::typeof(needleman_wunsch), mo::MaxOperator, θ::AbstractMatrix, (gs, gt)::Tuple{<:AbstractVector,<:AbstractVector}, dp::DP)
 	n, m = size(θ)
-	D, E = ∂NW(mo, θ, gs, gt, dp)
+	D, E = ∂NW(mo, θ, (gs, gt), dp)
 	# gradient wrt the two gap cost vectors
 	dgs = similar(gs)
 	for i in 1:n
@@ -159,7 +159,7 @@ function rrule(::typeof(needleman_wunsch), mo::MaxOperator, θ::AbstractMatrix, 
 	end
 	# change of D[n,m] by θ[i,j]
 	dp.E .*= @view(dp.Q[:,:,2])
-	return last(D), ȳ -> (NO_FIELDS, Zero(), ȳ * E, ȳ * dgs, ȳ * dgt, Zero())
+	return last(D), ȳ -> (NO_FIELDS, Zero(), ȳ * E, (ȳ * dgs, ȳ * dgt), Zero())
 end
 
 

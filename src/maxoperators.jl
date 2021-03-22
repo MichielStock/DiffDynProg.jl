@@ -139,10 +139,10 @@ smoothmax_argmax(mo::MaxOperator, x) = frule(smoothmax, mo, x)
 # Minimum
 # -------
 smoothmin(::Max, x) = minimum(x)
-smoothmin(mo::MaxOperator, x) = -smoothmax(mo, -x)
+smoothmin(mo::MaxOperator, x) = -smoothmax(mo, .-x)
 
 function frule(::typeof(smoothmin), mo::MaxOperator, x)
-    m, q = frule(smoothmax, mo, -x)
+    m, q = frule(smoothmax, mo, .-x)
     return -m, q
 end
 
