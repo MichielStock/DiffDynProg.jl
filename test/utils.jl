@@ -19,6 +19,10 @@
         q = project_in_simplex((1.0, 2.0, 3.0), 1.0)
         @test sum(q) ≈ 1 && all(0 .≤ q .≤ 1)
         @test all(q .≈ project_in_simplex((1.0, 2.0, 3.0) .+1, 1.0))
+
+        q = project_in_simplex((1.0, 2.0, 3.0, 1.0), 1.0)
+        @test sum(q) ≈ 1 && all(0 .≤ q .≤ 1)
+        @test all(q .≈ project_in_simplex((1.0, 2.0, 3.0, 1.0) .+1, 1.0))
     end
 
     @testset "softmax etc" begin
