@@ -12,8 +12,6 @@ using ChainRulesCore
 using FillArrays
 import ChainRulesCore: rrule, Zero
 
-
-
 include("maxoperators.jl")
 include("dynprog.jl")
 include("utils.jl")

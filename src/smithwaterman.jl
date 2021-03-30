@@ -69,6 +69,7 @@ end
 ∂SW(mo::MaxOperator, θ::AbstractMatrix, g::TV, dp::DP) = ∂SW(mo, θ, g, dp.D, dp.E, dp.Q)
 ∂SW(mo::MaxOperator, θ::AbstractMatrix, g::TV) = ∂SW(mo, θ, g, DP(θ))
 ∂SW(mo::MaxOperator, θ::AbstractMatrix, g::Number, args...) = ∂SW(mo, θ, g .* Ones.(size(θ)), args...)
+∂SW(mo::MaxOperator, θ::AbstractMatrix, (gs, gt)::TN, args...) = ∂SW(mo, θ, (gs*Ones(size(θ,1)), gt*Ones(size(θ,2))), args...)
 
 # specific gradients
 
