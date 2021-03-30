@@ -35,7 +35,7 @@ end
     @test size(E) == (n, m)
 end
 
-@testset "Needleman Wunsch" begin
+@testset "Needleman-Wunsch" begin
     s1 = needleman_wunsch(Max(), θ, 1, dp)
     s2 = needleman_wunsch(EntropyMax(1.0), θ, 1, dp)
     s3 = needleman_wunsch(EntropyMax(1.0), θ, (ones(n), ones(m)), dp)
@@ -50,7 +50,7 @@ end
     @test size(E) == (n, m)
 end
 
-@testset "Needleman Wunsch subtituion matrix" begin
+@testset "Needleman-Wunsch subtitution matrix" begin
     s = rand(1:10, n)
     t = rand(1:10, m)
 
@@ -60,4 +60,20 @@ end
     θ = S[s, t]
     @test needleman_wunsch(EntropyMax(), s, t, S, 1) ≈ needleman_wunsch(EntropyMax(), θ, 1) 
     @test needleman_wunsch(SquaredMax(), s, t, S, 1, dp) ≈ needleman_wunsch(SquaredMax(), θ, 1, dp) 
+end
+
+@testset "Smith-Waterman" begin
+    using DiffDynProg: logsumexp
+    s1 = smith_waterman(Max(), θ, 1, dp)
+    s2 = smith_waterman(EntropyMax(1.0), θ, 1, dp)
+    s3 = smith_waterman(EntropyMax(1.0), θ, (ones(n), ones(m)), dp)
+    
+    d, E = ∂SW(Max(), θ, 1, dp)
+
+    @test s1 ≈ d
+    @test size(E) == (n, m)
+
+    d, E = ∂SW(EntropyMax(1.0), θ, 1)
+    @test s2 ≈ d
+    @test size(E) == (n, m)
 end

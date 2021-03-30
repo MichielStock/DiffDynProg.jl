@@ -5,7 +5,7 @@ version = "0.1.0"
 
 [deps]
 ChainRulesCore = "d360d2e6-b24c-11e9-a2a3-2a2ae2dbcce4"
-DrWatson = "634d3b9d-ee7a-5ddf-bec9-22491ea816e1"
+FillArrays = "1a297f60-69ca-5386-bcde-b61e274b549b"
 LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 RecipesBase = "3cdcf5f2-1ef4-517c-9805-6587b60abb01"
 StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"

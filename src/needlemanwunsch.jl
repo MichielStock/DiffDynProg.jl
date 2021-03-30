@@ -6,7 +6,7 @@ Last update: wednesday 17 March 2021
 michielfmstock@gmail.com
 
 Implementation of Needleman-Wunsch and its gradients
-according to Mench and Blondel.
+following the principles of Mench and Blondel,
 =#
 
 # NW with fixed cost
@@ -150,11 +150,11 @@ function rrule(::typeof(needleman_wunsch), mo::MaxOperator, θ::AbstractMatrix, 
 	D, E = ∂NW(mo, θ, (gs, gt), dp)
 	# gradient wrt the two gap cost vectors
 	dgs = similar(gs)
-	for i in 1:n
+	@inbounds for i in 1:n
 		dgs[i] = @view(dp.Q[i+1,2:m+1,1]) ⋅ @view(dp.E[i+1,2:m+1])
 	end
 	dgt = similar(gt)
-	for j in 1:m
+	@inbounds for j in 1:m
 		dgt[j] = @view(dp.Q[2:n+1,j+1,3]) ⋅ @view(dp.E[2:n+1,j+1])
 	end
 	# change of D[n,m] by θ[i,j]
