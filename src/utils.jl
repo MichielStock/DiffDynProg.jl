@@ -1,6 +1,6 @@
 #=
 Created on 07/12/2020 09:36:55
-Last update: Friday 26 March 2021
+Last update: Tuesday 30 March 2021
 
 @author: Michiel Stock
 michielfmstock@gmail.com
@@ -30,7 +30,7 @@ project_in_simplex(v::Tuple, z) = project_in_simplex([v...], z)
 
 function project_in_simplex((v₁, v₂, v₃)::NTuple{3,T}, z) where {T<:Number}
     μ₁, μ₂, μ₃ = v₁, v₂, v₃
-    # three comparisions to sort
+    # three comparisons to sort
     if μ₁ < μ₂; μ₁, μ₂ = μ₂, μ₁; end
     if μ₂ < μ₃; μ₂, μ₃ = μ₃, μ₂; end
     if μ₁ < μ₂; μ₁, μ₂ = μ₂, μ₁; end
@@ -45,7 +45,7 @@ end
 
 function project_in_simplex((v₁, v₂, v₃, v₄)::NTuple{4,T}, z) where {T<:Number}
     μ₁, μ₂, μ₃, μ₄ = v₁, v₂, v₃, v₄
-    # four comparisions to sort
+    # four comparisons to sort
     μ₃, μ₁ = minmax(μ₃, μ₁)
     μ₄, μ₂ = minmax(μ₄, μ₂)
     μ₂, μ₁ = minmax(μ₂, μ₁)
@@ -86,7 +86,7 @@ randg() = - log(-log(rand()))
 """sample a vector or array of values from Gumbel(0, 1)"""
 randg(n::Int...) = - log.(-log.(rand(n...)))
 
-exprandg(n::Int) = 1.0 ./ -log.(rand(n))
+exprandg(n::Int...) = -log.(rand(n...)) .|> inv
 
 function _logsumexp(x; γ=1)
     c = maximum(x)
