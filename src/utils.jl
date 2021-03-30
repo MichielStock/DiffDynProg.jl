@@ -1,6 +1,6 @@
 #=
 Created on 07/12/2020 09:36:55
-Last update: Monday 22 March 2021
+Last update: Friday 26 March 2021
 
 @author: Michiel Stock
 michielfmstock@gmail.com
@@ -9,10 +9,9 @@ General utilities used by the function of this package but
 are themselves not the main product.
 =#
 
+TV = Tuple{<:AbstractVector,<:AbstractVector}
+TN = Tuple{<:Number,<:Number}
 
-
-
-# TODO: make this more efficient, special case for three dims, using a sorting network?
 """
     project_in_simplex(v::Vector, z::Number)
 
@@ -41,6 +40,26 @@ function project_in_simplex((v₁, v₂, v₃)::NTuple{3,T}, z) where {T<:Number
     μ₃ - (μ₁ + μ₂ + μ₃ - z) / 3 > 0.0 && (θ = (μ₁ + μ₂ + μ₃ - z) / 3)
     # return vector
     return max.((v₁, v₂, v₃) .- θ, zero(T))
+end
+
+
+function project_in_simplex((v₁, v₂, v₃, v₄)::NTuple{4,T}, z) where {T<:Number}
+    μ₁, μ₂, μ₃, μ₄ = v₁, v₂, v₃, v₄
+    # four comparisions to sort
+    μ₃, μ₁ = minmax(μ₃, μ₁)
+    μ₄, μ₂ = minmax(μ₄, μ₂)
+    μ₂, μ₁ = minmax(μ₂, μ₁)
+    μ₄, μ₃ = minmax(μ₄, μ₃)
+    μ₃, μ₂ = minmax(μ₃, μ₂)
+    if μ₂ < μ₃; μ₂, μ₃ = μ₃, μ₂; end
+    if μ₁ < μ₂; μ₁, μ₂ = μ₂, μ₁; end
+    # find theta
+    θ = (μ₁ - z) / 1
+    μ₂ - (μ₁ + μ₂ - z) / 2 > 0.0 && (θ = (μ₁ + μ₂ - z) / 2)
+    μ₃ - (μ₁ + μ₂ + μ₃ - z) / 3 > 0.0 && (θ = (μ₁ + μ₂ + μ₃ - z) / 3)
+    μ₄ - (μ₁ + μ₂ + μ₃ + μ₄ - z) / 4 > 0.0 && (θ = (μ₁ + μ₂ + μ₃ + μ₄ - z) / 4)
+    # return vector
+    return max.((v₁, v₂, v₃, v₄) .- θ, zero(T))
 end
 
 # dot product that only consider finite numbers
