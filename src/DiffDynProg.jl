@@ -6,13 +6,13 @@ export gap_cost_matrix, gumbel_softmax
 export DP, getD, getE, getQ
 export dynamic_time_warping, ∂DTW
 export needleman_wunsch, ∂NW, ∂NW_θ, ∂NW_gs, ∂NW_gt, ∂NW_all
-export smith_waterman, ∂SW
+export smith_waterman, ∂SW, ∂SW_θ, ∂SW_gs, ∂SW_gt, ∂SW_all
 
 using ChainRulesCore
 using FillArrays
-import ChainRulesCore: rrule
+import ChainRulesCore: rrule, Zero
 
-TV = Tuple{<:AbstractVector,<:AbstractVector}
+
 
 include("maxoperators.jl")
 include("dynprog.jl")

@@ -9,10 +9,9 @@ General utilities used by the function of this package but
 are themselves not the main product.
 =#
 
+TV = Tuple{<:AbstractVector,<:AbstractVector}
+TN = Tuple{<:Number,<:Number}
 
-
-
-# TODO: make this more efficient, special case for three dims, using a sorting network?
 """
     project_in_simplex(v::Vector, z::Number)
 

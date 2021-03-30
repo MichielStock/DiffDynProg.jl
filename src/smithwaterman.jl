@@ -31,6 +31,10 @@ end
 smith_waterman(mo::MaxOperator, θ::AbstractMatrix, g::TV, dp::DP) = smith_waterman(mo, θ, g, dp.D)
 smith_waterman(mo::MaxOperator, θ::AbstractMatrix, g::TV) = smith_waterman(mo, θ, g, zeros(eltype(θ), size(θ,1)+1, size(θ,2)+1))
 smith_waterman(mo::MaxOperator, θ::AbstractMatrix, g::Number, args...) = smith_waterman(mo, θ, g .* Ones.(size(θ)), args...)
+smith_waterman(mo::MaxOperator, θ::AbstractMatrix, (gs, gt)::TN, args...) = smith_waterman(mo, θ, (gs*Ones(size(θ,1)), gt*Ones(size(θ,2))), args...)
+# SW with a substition matrix
+smith_waterman(mo::MaxOperator, s::Vector, t::Vector, S::AbstractMatrix, args...) = smith_waterman(mo, S[s, t], args...)
+
 
 
 function ∂SW(mo::MaxOperator, θ::AbstractMatrix, (gs, gt)::TV, D::AbstractMatrix, E::AbstractMatrix, Q::AbstractArray)
@@ -66,9 +70,40 @@ end
 ∂SW(mo::MaxOperator, θ::AbstractMatrix, g::TV) = ∂SW(mo, θ, g, DP(θ))
 ∂SW(mo::MaxOperator, θ::AbstractMatrix, g::Number, args...) = ∂SW(mo, θ, g .* Ones.(size(θ)), args...)
 
+# specific gradients
 
+# this is a dummy where one can specify the direction 
 
-function rrule(::typeof(smith_waterman), mo::MaxOperator, θ::AbstractMatrix, (gs, gt)::Tuple{<:AbstractVector,<:AbstractVector}, dp::DP)
+function ∂SW_(dir::Int, mo::MaxOperator, θ::AbstractMatrix, g, dp::DP)
+	D, E = ∂SW(mo, θ, g, dp)
+	dp.E .*= @view(dp.Q[:,:,dir])
+	return D, E
+end
+
+∂SW_(dir::Int, mo::MaxOperator, θ::AbstractMatrix, g) = ∂SW_(dir, mo, θ, g, DP(θ))
+
+∂SW_θ(args...) = ∂SW_(2, args...)
+∂SW_gs(args...) = ∂SW_(1, args...)
+∂SW_gt(args...) = ∂SW_(3, args...)
+
+function ∂SW_all(mo::MaxOperator, θ::AbstractMatrix, g, dp::DP)
+	n, m = size(θ)
+	D, E = ∂SW(mo, θ, g, dp)
+	dp.Q .*= dp.E
+	return D, E, @view(dp.Q[2:n+1,2:m+1,2]), @view(dp.Q[2:n+1,2:m+1,1]), @view(dp.Q[2:n+1,2:m+1,3])
+end
+
+∂SW_all(mo::MaxOperator, θ::AbstractMatrix, g::Number) = ∂SW_all(mo, θ, g, DP(θ))
+
+function rrule(::typeof(smith_waterman), mo::MaxOperator, θ::AbstractMatrix, g::Union{Number,TN}, dp::DP)
+	n, m = size(θ)
+	D, E = ∂SW(mo, θ, g, dp)
+	# change of D[n,m] by θ[i,j]
+	dp.E .*= @view(dp.Q[:,:,2])
+	return last(D), ȳ -> (NO_FIELDS, Zero(), ȳ * E, Zero(), Zero())
+end
+
+function rrule(::typeof(smith_waterman), mo::MaxOperator, θ::AbstractMatrix, (gs, gt)::TV, dp::DP)
 	n, m = size(θ)
 	lse, E = ∂SW(mo, θ, (gs, gt), dp)
 	# gradient wrt the two gap cost vectors
