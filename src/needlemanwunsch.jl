@@ -39,6 +39,9 @@ function ∂NW(mo::MaxOperator, θ::AbstractMatrix, (gs, gt)::TV, D::AbstractMat
     n, m = size(θ)
 	@assert size(D, 1) > n && size(D, 2) > m "The dimensions of the DP matrix `D`` and `θ` do not agree"
     fill!(Q, zero(T))
+	# QUESTION: intiialize Q?
+	Q[n+2,1:m+1, 3] .= one(T)
+	Q[1:n+1,m+2, 1] .= one(T)
 	Q[n+2, m+2, 2] = one(T)
 	E[:,m+2] .= zero(T)
 	E[n+2,:] .= zero(T)

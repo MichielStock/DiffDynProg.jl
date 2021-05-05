@@ -42,6 +42,10 @@ function ∂SW(mo::MaxOperator, θ::AbstractMatrix, (gs, gt)::TV, D::AbstractMat
     n, m = size(θ)
 	@assert size(D, 1) > n && size(D, 2) > m "The dimensions of the DP matrix `D`` and `θ` do not agree"
     fill!(Q, zero(T))
+	Q[n+2,1:m+1, 1] .= one(T)
+	Q[1:n+1,m+2, 3] .= one(T)
+	Q[n+2, m+2, 2] = one(T)
+	# QUESTION: should I initiate Q here?
 	E[:,m+2] .= zero(T)
 	E[n+2,:] .= zero(T)
     D[:,1] .= zero(T)
@@ -121,6 +125,7 @@ function rrule(::typeof(smith_waterman), mo::MaxOperator, θ::AbstractMatrix, (g
 	return lse, ȳ -> (NO_FIELDS, Zero(), ȳ * E, (ȳ * dgs, ȳ * dgt), Zero())
 end
 
+#=
 s = [0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0]
 t = [0.1, 0.1, 1.2, 1.2, 0.8, 0, 0, -3, -2, -1]
 
@@ -130,3 +135,4 @@ gs, gt = ones(n), ones(m)
 
 mo = EntropyMax(0.1)
 dp = DP(θ)
+=#
