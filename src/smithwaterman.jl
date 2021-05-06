@@ -94,7 +94,7 @@ function ∂SW_all(mo::MaxOperator, θ::AbstractMatrix, g, dp::DP)
 	return D, E, @view(dp.Q[2:n+1,2:m+1,2]), @view(dp.Q[2:n+1,2:m+1,1]), @view(dp.Q[2:n+1,2:m+1,3])
 end
 
-∂SW_all(mo::MaxOperator, θ::AbstractMatrix, g::Number) = ∂SW_all(mo, θ, g, DP(θ))
+∂SW_all(mo::MaxOperator, θ::AbstractMatrix, g) = ∂SW_all(mo, θ, g, DP(θ))
 
 function rrule(::typeof(smith_waterman), mo::MaxOperator, θ::AbstractMatrix, g::Union{Number,TN}, dp::DP)
 	n, m = size(θ)

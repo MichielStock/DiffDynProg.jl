@@ -88,7 +88,7 @@ function ∂NW_all(mo::MaxOperator, θ::AbstractMatrix, g, dp::DP)
 	return D, E, @view(dp.Q[2:n+1,2:m+1,2]), @view(dp.Q[2:n+1,2:m+1,1]), @view(dp.Q[2:n+1,2:m+1,3])
 end
 
-∂NW_all(mo::MaxOperator, θ::AbstractMatrix, g::Number) = ∂NW_all(mo, θ, g, DP(θ))
+∂NW_all(mo::MaxOperator, θ::AbstractMatrix, g) = ∂NW_all(mo, θ, g, DP(θ))
 
 # Gradients in ChainRulesCore
 
