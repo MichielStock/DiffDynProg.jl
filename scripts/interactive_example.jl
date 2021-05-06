@@ -66,8 +66,8 @@ $(@bind seq_free2 TextField())
 # ╔═╡ 66607a15-6aab-408a-b30a-4b038706b447
 begin
 	s = (length(seq_free1) > 0) ? seq_free1 : sequence1;
-	t = (length(seq_free2) > 0) ? seq_free2 : sequence1;
-end
+	t = (length(seq_free2) > 0) ? seq_free2 : sequence2;
+end;
 
 # ╔═╡ 3bb2cfd3-e30e-4276-b70d-070b3de0a033
 n, m = length(s), length(t);
@@ -83,9 +83,6 @@ md"""
 Which max operator do you want to use? 
 $(@bind maxop Select(["EntropyMax", "SquaredMax", "Hard"], default="EntropyMax"))
 """
-
-# ╔═╡ b8ad5efe-f723-4c51-b8a8-fff26d67dd24
-maxop  # check name
 
 # ╔═╡ 77546a56-3b11-466e-a5ad-8bef6115ac97
 md"""
@@ -115,6 +112,16 @@ Which substitution matrix do you to use?
 $(@bind submat Select(["BLOSUM45", "BLOSUM62", "BLOSUM90", "0/1 scoring"], default="BLOSUM62"))
 """
 
+# ╔═╡ feeac491-ad6d-48d3-95d2-71c5cbfc09ec
+md"Show sequence on plots: $(@bind show_seq CheckBox(default=true))"
+
+# ╔═╡ d4a8ec90-0653-47c3-aa86-30ef0ae298fa
+md"""
+## Paiwise substitution matrix
+
+The matrix $\theta$ quantifies the (dis)similarity between the residues. Currently showing $submat.
+"""
+
 # ╔═╡ 4f5709d1-9a78-4fbf-9e68-e7c7c7e85f26
 begin
 	# set the correct substitution matrix and compute theta
@@ -129,129 +136,139 @@ end;
 
 # ╔═╡ df424f8f-c454-4c0a-a3b6-cad807df77cf
 begin 
-	heatmap(θ; yflip=true, color=:vik, clims=(-6.0, 6.0), axes=false)
+	pθ = heatmap(θ; yflip=true, color=:vik, clims=(-6.0, 6.0), axes=false)
+	show_seq && yticks!((1:n, split(s, "")))
+	show_seq && xticks!((1:m, split(t, "")))
+	pθ
 end
 
-# ╔═╡ 352c789a-cac5-410a-81af-e1eee39797fc
-∂NW_all(mo, θ, (gs, gt))
-
-# ╔═╡ ce115b70-e2dc-460e-b8ca-6c1e9c7ea2b1
-if alignment_type == "global alignment"
-	∂NW_all(mo, θ, (gs, t))
-
-# ╔═╡ 3d3a3efb-198c-402a-87af-e749d950fe4b
+# ╔═╡ 39ca6f98-0dac-429b-954b-f04c1e703db0
 md"""
+## Dynamic programming matrix
 
-
-
-Which plot(s) do you want to see?
-$(@bind plot_type Select(["Overview", "Cost matrix θ", "DP matrix", "Overall gradient", "Gradient of θ", "Gradients of gap costs"], default="Overall gradient"))
+Below is the dynamic programming matrix $D$. 
 """
 
-# ╔═╡ a8c1d51e-ac4f-4dfd-850b-61330c8abcad
-begin
-	((length(protein1) > 0) && (length(protein2) > 0) ? 
-	zoomlimx = min(length(protein1)) :
-	zoomlimx = min(length(sequence1)));
-		
-	((length(protein1) > 0) && (length(protein2) > 0) ? 
-	zoomlimy = min(length(protein2)) :
-	zoomlimy = min(length(sequence2)));
-	
-	md"""
-	Zoom range for the right plot if applicable (x-axis & y-axis, respectively):
-	
-	$(@bind xrange RangeSlider(1:zoomlimx; show_value=true))
-	
-	$(@bind yrange RangeSlider(1:zoomlimy; show_value=true))
-	"""
+# ╔═╡ 6e45cee4-466d-415b-85c9-c5a93be88d4e
+if alignment_type != "global alignment"
+	md"The change of this alignment score w.r.t. the elements of $D$ is given below."
 end
 
-# ╔═╡ feeac491-ad6d-48d3-95d2-71c5cbfc09ec
-md"Show sequence on plots: $(@bind show_seq CheckBox(default=true))"
+# ╔═╡ f5aa16a6-ad76-48b2-af88-2b0439b56a21
+md""" 
+## Gradients
 
-# ╔═╡ c31ccdbc-5b02-4287-8abb-defcd3c8b256
-begin
+The gradient of the dynamic programming matrix is given below:
+"""
 
-	
-	
-	# compute the alignment
-	
+# ╔═╡ f0c5d254-8f0f-41eb-b3b5-56c49cfac65c
+md"""
+This gradient can be decomposed in three components:
+- a component depending on inserting gaps in $s$;
+- a component depending on extending the alignment;
+- a component depending on inserting gaps in $t$.
+"""
+
+# ╔═╡ e636e4a7-aa5e-4089-adec-ae01038cbe1d
+chars_s = s |> unique |> sort!
+
+# ╔═╡ af170735-63eb-4aac-9a63-e0349d55a805
+chars_s
+
+# ╔═╡ f9e960b2-ca06-48c5-9e1c-e58d8cf9420e
+chars_t = t |> unique |> sort!
+
+# ╔═╡ ce115b70-e2dc-460e-b8ca-6c1e9c7ea2b1
+begin 
 	if alignment_type == "global alignment"
-		dp = DP(θ)
-		D, E, Eθ, Egs, Egt = ∂NW_all(mo, θ, (gaps, gapt), dp)
-		D = getD(dp)
-		M = DiffDynProg.softmax(D)
+		D, E, Eθ, Egs, Egt = ∂NW_all(mo, θ, (gs, gt))
+		v = last(D)
 	else
-		dp = DP(θ)
-		D, E, Eθ, Egs, Egt = ∂SW_all(mo, θ, (gaps, gapt), dp)
-		D = getD(dp)
+		D, E, Eθ, Egs, Egt = ∂SW_all(mo, θ, (gs, gt))
 		M = DiffDynProg.softmax(D)
+		v = DiffDynProg.logsumexp(D)
 	end
-	
-	# compute the plot
-	yticks = (1:n, split(s1, ""));
-	xticks = (1:m, split(s2, ""));
-	xstart = xrange[1]; xstop = xrange[end]
-	ystart = yrange[1]; ystop = yrange[end]
-	
-	if plot_type == "Overview"
-		l = @layout [a b; c d]
-		p1 = heatmap(θ; yticks, xticks, yflip=true, color=:vik, clims=(-6.0, 6.0),
-            axes=false)
-		p2 = plot(heatmap(D; yticks, xticks, yflip=true, color=:Blues, axes=false))
-		p3 = plot(heatmap(E; yticks, xticks, yflip=true, 
-				color=cgrad([:white, :green]), clims=(0,1), axes=false))
-		p4 = plot(heatmap(M; yticks, xticks, yflip=true, 
+end;
+
+# ╔═╡ 0a73991d-1ae7-4908-94ab-c0cbbf25a9c5
+begin 
+	pD = heatmap(D; yflip=true, color=:deep, axes=false)
+	show_seq && yticks!((1:n, split(s, "")))
+	show_seq && xticks!((1:m, split(t, "")))
+	pD
+end
+
+# ╔═╡ 46923e27-adc2-48a8-9ca0-979c3d32a5f3
+if alignment_type == "global alignment"
+	md"For global alignment, the alignment score is the final value in this matrix, here: $v"
+else
+	md"In local alignment, we take the log-sum-exp of the matrix $D$, obtaining an alignment score of $v"
+end
+
+# ╔═╡ abde38be-3988-4765-9f95-607efb779e42
+if alignment_type != "global alignment"
+	pM = plot(heatmap(M; yflip=true, 
 				color=cgrad([:white, :purple]), clims=(0,1), axes=false))
-		plot(p1, p2, p3, p4, title=["θ" "D" "E" "M"], layout = l, size=(1200, 1000))
-		
-	elseif plot_type == "Cost matrix θ"
-		l = @layout [a b]
-		p1 = heatmap(θ; 
-			yticks, xticks, yflip=true, color=:vik, clims=(-6.0, 6.0), axes=false)
-		p2 = heatmap(θ[xstart:xstop, ystart:ystop];
-			yticks, xticks, yflip=true, color=:vik, clims=(-6.0, 6.0), axes=false)
-		plot(p1, p2, title=["θ" "θ zoomed"], layout = l, size=(1200, 500))
-		
-	elseif plot_type == "DP matrix" 
-		l = @layout [a b]
-		p1 = plot(heatmap(D;
-				yticks, xticks, yflip=true, color=:Blues, axes=false))
-		p2 = plot(heatmap(D[xstart:xstop, ystart:ystop];
-				yticks, xticks, yflip=true, color=:Blues, axes=false))
-		plot(p1, p2, title=["D" "D zoomed"], layout = l, size=(1200, 500))
-		
-	elseif plot_type == "Overall gradient"
-		l = @layout [a b]
-		p1 = plot(heatmap(E; 
-				yticks, xticks, yflip=true, color=cgrad([:white, :green]), 
-				clims=(0,1), axes=false))
-		p2 = plot(heatmap(E[xstart:xstop, ystart:ystop]; 
-				yticks, xticks, yflip=true, color=cgrad([:white, :green]), 
-				clims=(0,1), axes=false))
-		plot(p1, p2, title=["E" "E zoomed"], layout = l, size=(1200, 500))
-		
-	elseif plot_type == "Gradient of θ"
-		l = @layout [a b]
-		p1 = plot(heatmap(Eθ; 
-				yticks, xticks, yflip=true, color=cgrad([:white, :green]), 
-				clims=(0,1), axes=false))
-		p2 = plot(heatmap(Eθ[xstart:xstop, ystart:ystop]; 
-				yticks, xticks, yflip=true, color=cgrad([:white, :green]), 
-				clims=(0,1), axes=false))
-		plot(p1, p2, title=["Eθ" "Eθ zoomed"], layout = l, size=(1200, 500))
-		
-	elseif plot_type == "Gradients of gap costs"
-		l = @layout [a b]
-		p1 = plot(heatmap(Egs; 
-				yticks, xticks, yflip=true, color=cgrad([:white, :green]), 
-				clims=(0,1), axes=false))
-		p2 = plot(heatmap(Egt; 
-				yticks, xticks, yflip=true, color=cgrad([:white, :green]), 
-				clims=(0,1), axes=false))
-		plot(p1, p2, title=["Egs" "Egt"], layout = l, size=(1200, 500))
+	show_seq && yticks!((1:n, split(s, "")))
+	show_seq && xticks!((1:m, split(t, "")))
+	pM
+end
+
+# ╔═╡ 29f3cf02-d7b3-470a-9a4d-8a988e41f366
+begin
+	pE = plot(heatmap(E, yflip=true, 
+				color=cgrad([:white, :green]), clims=(0,1), axes=false))
+	show_seq && yticks!((1:n, split(s, "")))
+	show_seq && xticks!((1:m, split(t, "")))
+	pE
+end
+
+# ╔═╡ 6601ac61-dd7e-474f-8c0b-b0e81cb1b5fa
+begin
+	pEcomb = plot(
+		heatmap(Egs, yflip=true, 
+					color=cgrad([:white, :green]), clims=(0,1), axes=false,
+			title="gap in s"),
+		heatmap(Eθ, yflip=true, 
+					color=cgrad([:white, :green]), clims=(0,1), axes=false,
+			title="extending alignment"),
+		heatmap(Egt, yflip=true, 
+					color=cgrad([:white, :green]), clims=(0,1), axes=false,
+			title="gap in t"),
+		layout=(3, 1), size=(800, 1200))
+	show_seq && yticks!((1:n, split(s, "")))
+	show_seq && xticks!((1:m, split(t, "")))
+	pEcomb
+end
+
+# ╔═╡ 84676622-2bd2-4c62-99cb-1dd98f9518f9
+begin
+	dgs = sum(Egs, dims=2)[:]
+	dgt = sum(Egt, dims=1)[:]
+end;
+
+# ╔═╡ 85abc158-ce84-4eff-9d01-3a75d5483e1b
+begin
+	# compute gradient substitution matrix
+	dS = zeros(length(chars_s), length(chars_t))
+	for (i, sᵢ) in enumerate(s)
+		for (j, tⱼ) in enumerate(t)
+			println(sᵢ, tⱼ)
+			dS[findfirst(isequal(sᵢ), chars_s), findfirst(isequal(tⱼ), chars_t)] += Eθ[i,j]
+		end
 	end
+	pS = plot(
+		heatmap(dS, yflip=true, yticks=(1:length(chars_s), chars_s),
+				xticks=(1:length(chars_t), chars_t),
+					color=cgrad([:white, :green]), axes=false,
+			title="gradient substitution matrix"),
+		
+		plot(dgs, title="gradient gs", label="", color=:green),
+		plot(dgt, title="gradient gt", label="", color=:green),
+		layout=@layout([a [b;c]]), size=(800, 500)
+		)
+			
+	
 end
 
 # ╔═╡ Cell order:
@@ -261,16 +278,26 @@ end
 # ╠═3bb2cfd3-e30e-4276-b70d-070b3de0a033
 # ╠═b36ef14e-088c-483f-9dbe-edbbd951830a
 # ╠═0a9bccaa-72b2-4394-b561-1bdcb543a11d
-# ╠═b8ad5efe-f723-4c51-b8a8-fff26d67dd24
 # ╠═77546a56-3b11-466e-a5ad-8bef6115ac97
 # ╠═3cab7e29-4750-4ca9-b3c1-910e16d00eaf
 # ╠═419eea6b-0ace-406f-8977-1ecfc2c18747
 # ╠═ebc96485-9c73-4307-9799-531a1abdd7d4
+# ╠═feeac491-ad6d-48d3-95d2-71c5cbfc09ec
+# ╠═d4a8ec90-0653-47c3-aa86-30ef0ae298fa
 # ╠═4f5709d1-9a78-4fbf-9e68-e7c7c7e85f26
 # ╠═df424f8f-c454-4c0a-a3b6-cad807df77cf
-# ╠═352c789a-cac5-410a-81af-e1eee39797fc
+# ╟─39ca6f98-0dac-429b-954b-f04c1e703db0
+# ╠═0a73991d-1ae7-4908-94ab-c0cbbf25a9c5
+# ╠═46923e27-adc2-48a8-9ca0-979c3d32a5f3
+# ╠═6e45cee4-466d-415b-85c9-c5a93be88d4e
+# ╠═abde38be-3988-4765-9f95-607efb779e42
+# ╠═f5aa16a6-ad76-48b2-af88-2b0439b56a21
+# ╠═29f3cf02-d7b3-470a-9a4d-8a988e41f366
+# ╠═f0c5d254-8f0f-41eb-b3b5-56c49cfac65c
+# ╠═6601ac61-dd7e-474f-8c0b-b0e81cb1b5fa
+# ╠═84676622-2bd2-4c62-99cb-1dd98f9518f9
+# ╠═af170735-63eb-4aac-9a63-e0349d55a805
+# ╠═e636e4a7-aa5e-4089-adec-ae01038cbe1d
+# ╠═f9e960b2-ca06-48c5-9e1c-e58d8cf9420e
+# ╠═85abc158-ce84-4eff-9d01-3a75d5483e1b
 # ╠═ce115b70-e2dc-460e-b8ca-6c1e9c7ea2b1
-# ╠═3d3a3efb-198c-402a-87af-e749d950fe4b
-# ╠═a8c1d51e-ac4f-4dfd-850b-61330c8abcad
-# ╠═feeac491-ad6d-48d3-95d2-71c5cbfc09ec
-# ╠═c31ccdbc-5b02-4287-8abb-defcd3c8b256
