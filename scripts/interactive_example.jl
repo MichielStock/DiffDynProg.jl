@@ -78,9 +78,17 @@ $(@bind maxop Select(["EntropyMax", "SquaredMax", "Hard"], default="EntropyMax")
 
 # ╔═╡ 77546a56-3b11-466e-a5ad-8bef6115ac97
 md"""
-Set the value for the smoothing parameter $\lambda$:
-$(@bind lambda Slider(0.1:15, default=1; show_value=true))
+Set the value for the smoothing parameter $\log_{10}(\lambda)$:
+$(@bind loglambda Slider(-3:0.1:2, default=0; show_value=true))
 """
+
+# ╔═╡ 0a22bcd8-75f4-4679-8554-3fc59ea51d8f
+begin
+lambda = 10.0^loglambda
+md"""
+value of $\lambda$ : $(lambda)
+"""
+end
 
 # ╔═╡ 419eea6b-0ace-406f-8977-1ecfc2c18747
 md"""
@@ -96,7 +104,7 @@ $(@bind submat Select(["BLOSUM45", "BLOSUM62", "BLOSUM90", "0/1 scoring"], defau
 """
 
 # ╔═╡ feeac491-ad6d-48d3-95d2-71c5cbfc09ec
-md"Show sequence on plots: $(@bind show_seq CheckBox(default=true))"
+md"Show sequence on axes: $(@bind show_seq CheckBox(default=true))"
 
 # ╔═╡ d4a8ec90-0653-47c3-aa86-30ef0ae298fa
 md"""
@@ -138,7 +146,7 @@ This gradient can be decomposed into three components:
 
 # ╔═╡ aefbe8d1-528e-46e0-aa45-b3294f8ef54d
 md"""
-We can also look at the gradient components in alternative ways. The plots below illustrate how the different substitutions between residues influence the alignemt, as well how the gradients related to the gaps change along the sequence (i.e. at what position is more likely to be introduced for each sequence).
+We can also look at the gradient components in alternative ways. The plots below illustrate how the different substitutions between residues influence the alignment, as well how the gradients related to the gaps change along the sequence (i.e. at what position is more likely to be introduced for each sequence).
 """
 
 # ╔═╡ b5252d6b-db49-4e38-9fb7-2c4fedabf2e9
@@ -160,6 +168,12 @@ begin
 	$(@bind xrange RangeSlider(1:m; show_value=true))
 	"""
 end
+
+# ╔═╡ ab96d1d3-75a0-4f84-b533-0f77e884727d
+s
+
+# ╔═╡ 44373848-ff3b-4c62-8922-20726cee17d7
+t
 
 # ╔═╡ 4ed12b25-4aca-41aa-93c9-44496c831e5e
 # defining the subrange if applicable
@@ -363,10 +377,13 @@ end
 # ╟─b36ef14e-088c-483f-9dbe-edbbd951830a
 # ╟─0a9bccaa-72b2-4394-b561-1bdcb543a11d
 # ╟─77546a56-3b11-466e-a5ad-8bef6115ac97
+# ╟─0a22bcd8-75f4-4679-8554-3fc59ea51d8f
 # ╟─419eea6b-0ace-406f-8977-1ecfc2c18747
 # ╟─ebc96485-9c73-4307-9799-531a1abdd7d4
 # ╟─feeac491-ad6d-48d3-95d2-71c5cbfc09ec
 # ╟─e7735020-55f9-4dd2-bf78-67d60451aab3
+# ╠═ab96d1d3-75a0-4f84-b533-0f77e884727d
+# ╠═44373848-ff3b-4c62-8922-20726cee17d7
 # ╟─d4a8ec90-0653-47c3-aa86-30ef0ae298fa
 # ╟─df424f8f-c454-4c0a-a3b6-cad807df77cf
 # ╟─c220f01e-ecd5-4b17-be4c-4ebeb2062277
