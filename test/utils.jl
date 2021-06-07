@@ -7,6 +7,8 @@
 
         @test randg() isa Number
         @test randg(2, 3) isa Matrix{Float64}
+
+        @test randg(Float16, 2, 3) isa Matrix{Float16}
     end
 
     @testset "project in simplex" begin
