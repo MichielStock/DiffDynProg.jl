@@ -89,7 +89,8 @@ end
 
 function ∂SW_all(mo::MaxOperator, θ::AbstractMatrix, g, dp::DP)
 	n, m = size(θ)
-	D, E = ∂SW(mo, θ, g, dp)
+	v, E = ∂SW(mo, θ, g, dp)
+	D = getD(dp)
 	dp.Q .*= dp.E
 	return D, E, @view(dp.Q[2:n+1,2:m+1,2]), @view(dp.Q[2:n+1,2:m+1,1]), @view(dp.Q[2:n+1,2:m+1,3])
 end
