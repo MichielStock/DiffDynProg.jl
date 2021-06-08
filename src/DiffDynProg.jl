@@ -10,7 +10,7 @@ export smith_waterman, ∂SW, ∂SW_θ, ∂SW_gs, ∂SW_gt, ∂SW_all
 
 using ChainRulesCore
 using FillArrays
-import ChainRulesCore: rrule, Zero
+import ChainRulesCore: rrule, ZeroTangent
 
 include("maxoperators.jl")
 include("dynprog.jl")

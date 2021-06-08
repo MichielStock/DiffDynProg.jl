@@ -102,7 +102,7 @@ function rrule(::typeof(smith_waterman), mo::MaxOperator, θ::AbstractMatrix, g:
 	D, E = ∂SW(mo, θ, g, dp)
 	# change of D[n,m] by θ[i,j]
 	dp.E .*= @view(dp.Q[:,:,2])
-	return last(D), ȳ -> (NO_FIELDS, Zero(), ȳ * E, Zero(), Zero())
+	return last(D), ȳ -> (NO_FIELDS, ZeroTangent(), ȳ * E, ZeroTangent(), ZeroTangent())
 end
 
 function rrule(::typeof(smith_waterman), mo::MaxOperator, θ::AbstractMatrix, (gs, gt)::TV, dp::DP)
@@ -119,7 +119,7 @@ function rrule(::typeof(smith_waterman), mo::MaxOperator, θ::AbstractMatrix, (g
 	end
 	# change of D[n,m] by θ[i,j]
 	dp.E .*= @view(dp.Q[:,:,2])
-	return lse, ȳ -> (NO_FIELDS, Zero(), ȳ * E, (ȳ * dgs, ȳ * dgt), Zero())
+	return lse, ȳ -> (NO_FIELDS, ZeroTangent(), ȳ * E, (ȳ * dgs, ȳ * dgt), ZeroTangent())
 end
 
 s = [0, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0]

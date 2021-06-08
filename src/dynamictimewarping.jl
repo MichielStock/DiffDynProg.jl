@@ -69,6 +69,6 @@ end
 
 function rrule(::typeof(dynamic_time_warping), mo::MaxOperator, θ, dp::DP)
 	D, E = ∂DTW(mo, θ, dp)
-	return last(D), ȳ -> (NO_FIELDS, Zero(), ȳ * E, Zero())
+	return last(D), ȳ -> (NO_FIELDS, ZeroTangent(), ȳ * E, ZeroTangent())
 end
 

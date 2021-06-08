@@ -121,7 +121,7 @@ the quality of the approximation.
 """
 function gumbel_softmax(lp::Vector{T}; τ::Number=0.1) where {T<:Real}
     z = lp .+ randg(T, length(lp))
-    z = z .- logsumexp(z; γ=τ)
+    z = z .- logsumexp(z; γ=T(τ))
     return exp.(z ./ τ)
 end
 
@@ -134,7 +134,7 @@ parameter determining the quality of the approximation.
 """
 function gumbel_softmax(lp::Array{T}; τ::Number=0.1, dims=2) where {T<:Real}
 	Z = lp .+ randg(T, size(lp)...)
-	Z = Z .- logsumexp(Z; dims, γ=τ)
+	Z = Z .- logsumexp(Z; dims, γ=T(τ))
     return exp.(Z ./ τ)
 end
 

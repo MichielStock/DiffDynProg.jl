@@ -1,3 +1,4 @@
+using Base: Float16
 using Test, DiffDynProg
 
 include("maxoperators.jl")
