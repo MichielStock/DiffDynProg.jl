@@ -97,7 +97,7 @@ function rrule(::typeof(needleman_wunsch), mo::MaxOperator, θ::AbstractMatrix, 
 	D, E = ∂NW(mo, θ, g, dp)
 	# change of D[n,m] by θ[i,j]
 	dp.E .*= @view(dp.Q[:,:,2])
-	return last(D), ȳ -> (NO_FIELDS, Zero(), ȳ * E, Zero(), Zero())
+	return last(D), ȳ -> (NO_FIELDS, ZeroTangent(), ȳ * E, ZeroTangent(), ZeroTangent())
 end
 
 function rrule(::typeof(needleman_wunsch), mo::MaxOperator, θ::AbstractMatrix, (gs, gt)::TV, dp::DP)
@@ -114,7 +114,7 @@ function rrule(::typeof(needleman_wunsch), mo::MaxOperator, θ::AbstractMatrix, 
 	end
 	# change of D[n,m] by θ[i,j]
 	dp.E .*= @view(dp.Q[:,:,2])
-	return last(D), ȳ -> (NO_FIELDS, Zero(), ȳ * E, (ȳ * dgs, ȳ * dgt), Zero())
+	return last(D), ȳ -> (NO_FIELDS, ZeroTangent(), ȳ * E, (ȳ * dgs, ȳ * dgt), ZeroTangent())
 end
 
 
