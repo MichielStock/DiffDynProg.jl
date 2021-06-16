@@ -82,11 +82,11 @@ end
 # Generating Gumbel random values
 
 randg() = - log(-log(rand()))
-randg(T::Type{<:Real}) = - log(-log(rand(T)))
+randg(T::Type{<:Real}) = - log(-log(rand(T+eps(zero(T)))))
 
 """sample a vector or array of values from Gumbel(0, 1)"""
 randg(n::Int...) = - log.(-log.(rand(n...)))
-randg(T::Type{<:Real}, n::Int...) = - log.(-log.(rand(T, n...)))
+randg(T::Type{<:Real}, n::Int...) = - log.(-log.(rand(T, n...) .+ eps(zero(T))))
 
 exprandg(n::Int...) = -log.(rand(n...)) .|> inv
 
